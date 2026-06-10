@@ -7,14 +7,14 @@ export default function HomePage() {
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
      
       {/* Background Glow */}
-      <div className="absolute left-1/2 top-[-200px] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-zinc-800 blur-3xl opacity-40" />
+      <div className="absolute left-1/2 top-[-200px] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-zinc-800 blur-3xl" />
  {/* Background Video */}
       <video
         autoPlay
         muted
         loop
         playsInline
-        className="absolute inset-0 h-full w-full object-cover scale-105 opacity-35"
+        className="absolute inset-0 h-full w-full object-cover scale-105"
       >
        <source src="/video/15079739_1920_1080_30fps.mp4" type="video/mp4" />
       </video>
