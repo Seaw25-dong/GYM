@@ -3,6 +3,10 @@
 import { motion } from "framer-motion";
 import { Activity, Brain, Dumbbell, Utensils } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+
+import { getAuthUser } from "@/lib/auth";
 
 const features = [
   {
@@ -35,6 +39,19 @@ const steps = [
 ];
 
 export default function HomePage() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getAuthUser());
+    syncUser();
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("ai-gym-auth-change", syncUser);
+    return () => {
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("ai-gym-auth-change", syncUser);
+    };
+  }, []);
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="absolute left-1/2 top-[-200px] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-zinc-800 blur-3xl" />
@@ -51,13 +68,14 @@ export default function HomePage() {
         }}
       />
 
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 sm:py-6">
         <Link href="/" className="text-lg font-bold">
           AI Gym Coach
         </Link>
 
         <nav className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur md:flex">
           {[
+            ["Giới thiệu", "/about"],
             ["Tổng quan", "/dashboard"],
             ["Tập luyện", "/workout"],
             ["Dinh dưỡng", "/nutrition"],
@@ -74,23 +92,46 @@ export default function HomePage() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href="/login"
-            className="hidden rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium transition hover:bg-white/10 sm:inline-flex"
-          >
-            Đăng nhập
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition hover:scale-105"
-          >
-            Đăng ký
-          </Link>
-        </div>
+        {user ? (
+          <div className="flex items-center gap-3">
+            <Link href="/about" className="text-sm text-zinc-400 hover:text-white md:hidden">Giới thiệu</Link>
+            <Link href="/settings" className="hidden items-center gap-2 text-sm text-zinc-300 sm:flex">
+              {user.avatarUrl ? (
+                <Image unoptimized src={user.avatarUrl} alt="" width={32} height={32} className="size-8 rounded-full object-cover" />
+              ) : (
+                <span className="grid size-8 place-items-center rounded-full bg-white text-xs font-bold text-black">
+                  {(user.username || user.email).charAt(0).toUpperCase()}
+                </span>
+              )}
+              {user.username || user.email}
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition hover:scale-105"
+            >
+              Vào ứng dụng
+            </Link>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link href="/about" className="text-sm text-zinc-400 hover:text-white md:hidden">Giới thiệu</Link>
+            <Link
+              href="/login"
+              className="hidden rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium transition hover:bg-white/10 sm:inline-flex"
+            >
+              Đăng nhập
+            </Link>
+            <Link
+              href="/register"
+              className="rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition hover:scale-105"
+            >
+              Đăng ký
+            </Link>
+          </div>
+        )}
       </header>
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-88px)] max-w-7xl flex-col items-center px-6 py-20">
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl flex-col items-center px-4 py-12 sm:px-6 sm:py-20">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -104,7 +145,7 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="max-w-5xl text-center text-6xl font-bold leading-tight tracking-tight md:text-7xl"
+          className="max-w-5xl text-center text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-7xl"
         >
           Tăng cơ, giảm mỡ
           <span className="text-zinc-500"> theo dữ liệu của bạn</span>
@@ -124,20 +165,20 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.7 }}
-          className="mt-10 flex gap-4"
+          className="mt-9 flex w-full max-w-sm flex-col gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4"
         >
           <Link
-            href="/login?next=/onboarding"
-            className="rounded-2xl bg-white px-7 py-3 font-medium text-black transition hover:scale-105"
+            href={user ? "/onboarding" : "/login?next=/onboarding"}
+            className="rounded-2xl bg-white px-7 py-3 text-center font-medium text-black transition hover:scale-105"
           >
             Nhập chỉ số
           </Link>
 
           <Link
-            href="/register"
-            className="rounded-2xl border border-white/10 bg-white/5 px-7 py-3 font-medium backdrop-blur transition hover:bg-white/10"
+            href={user ? "/dashboard" : "/register"}
+            className="rounded-2xl border border-white/10 bg-white/5 px-7 py-3 text-center font-medium backdrop-blur transition hover:bg-white/10"
           >
-            Tạo tài khoản
+            {user ? "Xem tổng quan" : "Tạo tài khoản"}
           </Link>
         </motion.div>
 
@@ -145,18 +186,18 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1, duration: 1 }}
-          className="mt-24 w-full max-w-5xl rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl"
+          className="mt-16 w-full max-w-5xl rounded-3xl border border-white/10 bg-white/5 p-4 shadow-2xl backdrop-blur-xl sm:mt-24 sm:p-6"
         >
-          <div className="grid gap-6 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
             {[
               ["Calo mục tiêu", "2480"],
               ["Protein", "180g"],
               ["Lịch tập", "4 buổi"],
               ["Thực đơn", "Theo gram"],
             ].map(([title, value]) => (
-              <div key={title} className="rounded-2xl border border-white/10 bg-black/40 p-5">
+              <div key={title} className="rounded-2xl border border-white/10 bg-black/40 p-4 sm:p-5">
                 <p className="text-sm text-zinc-500">{title}</p>
-                <h2 className="mt-2 text-3xl font-bold">{value}</h2>
+                <h2 className="mt-2 text-2xl font-bold sm:text-3xl">{value}</h2>
               </div>
             ))}
           </div>
@@ -213,6 +254,92 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <section className="relative z-10 border-t border-white/10 bg-black px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div>
+              <p className="text-sm uppercase tracking-widest text-zinc-500">Một hệ thống xuyên suốt</p>
+              <h2 className="mt-3 max-w-3xl text-4xl font-bold leading-tight sm:text-5xl">
+                Plan không đứng yên—nó thay đổi cùng quá trình tập của bạn
+              </h2>
+              <p className="mt-5 max-w-2xl leading-relaxed text-zinc-400">
+                Lịch tập, set thực tế, cân nặng, số đo và nhật ký ăn được lưu cùng một tài khoản. Khi có đủ lịch sử, AI có thể nhìn xu hướng thay vì chỉ dựa vào một lần nhập chỉ số.
+              </p>
+              <Link href="/about" className="mt-7 inline-flex rounded-2xl border border-white/10 bg-white/5 px-6 py-3 font-medium transition hover:bg-white/10">
+                Tìm hiểu cách web hoạt động
+              </Link>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                ["01", "Lịch tập realtime", "Xem đúng buổi theo ngày, ghi từng set và đồng bộ trạng thái hoàn thành."],
+                ["02", "Tiến độ thật", "Biểu đồ cân nặng, số đo, ảnh và PR lấy trực tiếp từ dữ liệu của bạn."],
+                ["03", "Nhật ký dinh dưỡng", "Theo dõi bữa ăn và lượng gram thực tế thay vì chỉ đọc thực đơn mẫu."],
+                ["04", "Kiến thức dễ tra", "Thuật ngữ gym, cardio và supplement được giải thích ngay trong app."],
+              ].map(([number, title, text]) => (
+                <article key={number} className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                  <span className="text-sm font-bold text-zinc-700">{number}</span>
+                  <h3 className="mt-4 text-xl font-bold">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-500">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 overflow-hidden border-t border-white/10 bg-zinc-950 px-4 py-20 text-center sm:px-6 sm:py-28">
+        <div className="absolute left-1/2 top-1/2 size-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.06] blur-3xl" />
+        <div className="relative mx-auto max-w-4xl">
+          <p className="text-sm uppercase tracking-[0.25em] text-zinc-500">Bắt đầu từ hôm nay</p>
+          <h2 className="mt-5 text-4xl font-bold leading-tight sm:text-6xl">
+            Tập có dữ liệu. Ăn có mục tiêu. Tiến bộ có thể nhìn thấy.
+          </h2>
+          <p className="mx-auto mt-5 max-w-2xl text-zinc-400">
+            Tạo tài khoản, nhập chỉ số và nhận plan đầu tiên. Bạn luôn có thể cập nhật lại khi mục tiêu hoặc lịch sinh hoạt thay đổi.
+          </p>
+          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link href={user ? "/onboarding" : "/register"} className="rounded-2xl bg-white px-8 py-3 font-medium text-black transition hover:scale-105">
+              {user ? "Cập nhật chỉ số" : "Tạo tài khoản miễn phí"}
+            </Link>
+            <Link href="/supplements" className="rounded-2xl border border-white/10 px-8 py-3 font-medium text-zinc-300 transition hover:bg-white/10">
+              Xem kiến thức bổ sung
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-white/10 bg-black px-4 pb-8 pt-14 sm:px-6 sm:pt-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+            <div>
+              <Link href="/" className="text-xl font-bold">AI Gym Coach</Link>
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-zinc-500">
+                Nền tảng hỗ trợ xây dựng lịch tập, dinh dưỡng và theo dõi tiến độ cá nhân bằng dữ liệu và AI.
+              </p>
+            </div>
+
+            {[
+              ["Khám phá", [["Giới thiệu", "/about"], ["Bài tập", "/exercises"], ["Thuật ngữ", "/glossary"], ["Thực phẩm bổ sung", "/supplements"]]],
+              ["Ứng dụng", [["Tổng quan", "/dashboard"], ["Lịch tập", "/workout"], ["Dinh dưỡng", "/nutrition"], ["Tiến độ", "/progress"]]],
+              ["Tài khoản", [["Đăng nhập", "/login"], ["Đăng ký", "/register"], ["Quên mật khẩu", "/forgot-password"], ["Cài đặt", "/settings"]]],
+            ].map(([heading, links]) => (
+              <div key={heading}>
+                <h3 className="text-sm font-semibold uppercase tracking-widest text-zinc-400">{heading}</h3>
+                <div className="mt-4 grid gap-3 text-sm">
+                  {links.map(([label, href]) => <Link key={href} href={href} className="text-zinc-600 transition hover:text-white">{label}</Link>)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3 pt-7 text-xs leading-relaxed text-zinc-700 sm:flex-row sm:items-center sm:justify-between">
+            <p>© {new Date().getFullYear()} AI Gym Coach. All rights reserved.</p>
+            <p className="max-w-2xl sm:text-right">Thông tin trên website mang tính tham khảo, không thay thế chẩn đoán hoặc tư vấn từ bác sĩ, chuyên gia dinh dưỡng hay huấn luyện viên có chuyên môn.</p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

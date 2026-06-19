@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const generatedPlanSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
     profile: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Profile",

@@ -13,7 +13,9 @@ async function requireAuth(req, _res, next) {
     }
 
     const payload = jwt.verify(token, getJwtSecret());
-    const user = await User.findById(payload.sub).select("-passwordHash");
+    const user = await User.findById(payload.sub).select(
+      "-passwordHash -refreshTokenHash -refreshTokenExpiresAt -emailVerificationTokenHash -emailVerificationExpiresAt"
+    );
 
     if (!user) {
       throw createHttpError(401, "User not found");
@@ -34,4 +36,4 @@ function getJwtSecret() {
   return process.env.JWT_SECRET;
 }
 
-export { requireAuth };
+export { getJwtSecret, requireAuth };

@@ -1,7 +1,11 @@
 import dotenv from "dotenv";
+import { createServer } from "http";
+import jwt from "jsonwebtoken";
+import { Server } from "socket.io";
 
 import app from "./app.js";
 import { connectDatabase } from "./config/db.js";
+import { getJwtSecret } from "./middleware/requireAuth.js";
 
 dotenv.config();
 
@@ -9,8 +13,31 @@ const port = process.env.PORT || 4000;
 
 async function startServer() {
   await connectDatabase(process.env.MONGODB_URI);
+  const httpServer = createServer(app);
+  const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+    .split(",")
+    .map((origin) => origin.trim());
+  const io = new Server(httpServer, {
+    cors: { origin: allowedOrigins, credentials: true },
+  });
 
-  app.listen(port, () => {
+  io.use((socket, next) => {
+    try {
+      const payload = jwt.verify(socket.handshake.auth?.token || "", getJwtSecret());
+      socket.data.userId = payload.sub;
+      next();
+    } catch {
+      next(new Error("Authentication required"));
+    }
+  });
+
+  io.on("connection", (socket) => {
+    socket.join(`user:${socket.data.userId}`);
+  });
+
+  app.set("io", io);
+
+  httpServer.listen(port, () => {
     console.log(`AI Gym Coach API listening on port ${port}`);
   });
 }

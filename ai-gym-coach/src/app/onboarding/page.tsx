@@ -3,11 +3,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-nav";
 import { TermTooltip } from "@/components/term-tooltip";
-import { generateAiPlan } from "@/lib/api";
+import { generateAiPlan, getCurrentFitnessPlan } from "@/lib/api";
 import { calculateFitnessPlan, defaultProfile } from "@/lib/fitness";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +52,18 @@ export default function OnboardingPage() {
   const [generationError, setGenerationError] = useState("");
   const plan = useMemo(() => calculateFitnessPlan(profile), [profile]);
 
+  useEffect(() => {
+    let active = true;
+    getCurrentFitnessPlan()
+      .then((data) => {
+        if (active && data.profile) setProfile(data.profile);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const updateProfile = (field, value) => {
     setProfile((current) => ({ ...current, [field]: value }));
   };
@@ -76,18 +88,8 @@ export default function OnboardingPage() {
 
     setIsGenerating(true);
     setGenerationError("");
-    window.localStorage.setItem("ai-gym-profile", JSON.stringify(profile));
-    window.localStorage.setItem("ai-gym-plan", JSON.stringify(plan));
-
     try {
-      const aiData = await generateAiPlan(profile);
-
-      if (aiData?.generatedPlan) {
-        window.localStorage.setItem(
-          "ai-gym-generated-plan",
-          JSON.stringify(aiData.generatedPlan)
-        );
-      }
+      await generateAiPlan(profile);
     } catch (error) {
       setGenerationError(
         "Chưa tạo được plan AI, app sẽ dùng plan công thức trước."
@@ -101,7 +103,7 @@ export default function OnboardingPage() {
 
   return (
     <AppShell>
-      <div className="flex min-h-[calc(100vh-73px)] items-center justify-center px-6 py-12 lg:min-h-screen">
+      <div className="flex min-h-[calc(100vh-73px)] items-center justify-center px-4 py-6 sm:px-6 sm:py-12 lg:min-h-screen">
         <div className="w-full max-w-5xl">
           <div className="mb-10">
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -121,7 +123,7 @@ export default function OnboardingPage() {
             </p>
           </div>
 
-          <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:p-8">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl sm:p-6 md:p-8">
             <AnimatePresence mode="wait">
               {step === 0 && (
                 <motion.div
@@ -130,7 +132,7 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Chỉ số cơ thể</h1>
+                  <h1 className="text-3xl font-bold sm:text-4xl">Chỉ số cơ thể</h1>
                   <p className="mt-3 text-zinc-400">
                     Các thông tin này dùng để tính <TermTooltip term="BMR" />,{" "}
                     <TermTooltip term="TDEE" />, mục tiêu calo và{" "}
@@ -162,7 +164,7 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Chọn mục tiêu</h1>
+                  <h1 className="text-3xl font-bold sm:text-4xl">Chọn mục tiêu</h1>
                   <p className="mt-3 text-zinc-400">
                     App sẽ điều chỉnh calo, macro và trọng tâm tập luyện theo lựa chọn này.
                   </p>
@@ -188,7 +190,7 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Nhịp vận động</h1>
+                  <h1 className="text-3xl font-bold sm:text-4xl">Nhịp vận động</h1>
                   <p className="mt-3 text-zinc-400">
                     Cho app biết tần suất gym/thể thao để <TermTooltip term="TDEE" /> không bị đoán quá chung chung.
                   </p>
@@ -208,6 +210,16 @@ export default function OnboardingPage() {
 
                     <div className="grid content-start gap-5">
                       <NumberInput label="Số buổi gym / tuần" value={profile.gymDays} onChange={(value) => updateProfile("gymDays", value)} />
+                      <div>
+                        <p className="mb-2 text-sm text-zinc-500">Chọn ngày tập</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[[1,"T2"],[2,"T3"],[3,"T4"],[4,"T5"],[5,"T6"],[6,"T7"],[0,"CN"]].map(([day,label]) => {
+                            const active = (profile.trainingDays || []).includes(day);
+                            return <button key={day} type="button" onClick={() => updateProfile("trainingDays", active ? profile.trainingDays.filter((item) => item !== day) : [...(profile.trainingDays || []), day])} className={`rounded-xl border px-3 py-2 text-sm ${active ? "bg-white text-black" : "border-white/10 text-zinc-500"}`}>{label}</button>;
+                          })}
+                        </div>
+                        <p className="mt-2 text-xs text-zinc-600">Chọn đúng {profile.gymDays || 0} ngày; nếu lệch hệ thống sẽ tự chia đều.</p>
+                      </div>
                       <NumberInput label="Số buổi thể thao/cardio / tuần" value={profile.sportDays} onChange={(value) => updateProfile("sportDays", value)} />
                       <SelectInput
                         label="Kinh nghiệm tập"
@@ -227,7 +239,7 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Plan khởi đầu của bạn</h1>
+                  <h1 className="text-3xl font-bold sm:text-4xl">Plan khởi đầu của bạn</h1>
                   <p className="mt-3 text-zinc-400">{plan.focus}</p>
 
                   <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -267,7 +279,7 @@ export default function OnboardingPage() {
               )}
             </AnimatePresence>
 
-            <div className="mt-12 flex items-center justify-between gap-4">
+            <div className="mt-10 grid grid-cols-2 items-center gap-3 sm:flex sm:justify-between sm:gap-4">
               {step === 0 ? (
                 <Link
                   href="/"

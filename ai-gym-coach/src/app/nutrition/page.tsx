@@ -2,13 +2,32 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/app-nav";
+import { EmptyPlanState, PlanLoadingState } from "@/components/empty-plan-state";
 import { TermTooltip } from "@/components/term-tooltip";
 import { useFitnessPlan } from "@/hooks/use-fitness-plan";
+import { getNutritionLog, saveNutritionLog } from "@/lib/api";
+import { toDateKey } from "@/lib/workout-schedule";
 
 export default function NutritionPage() {
-  const { plan, generatedPlan } = useFitnessPlan();
+  const { plan, generatedPlan, hasSavedPlan, isLoading } = useFitnessPlan();
+
+  if (isLoading) {
+    return <AppShell><PlanLoadingState /></AppShell>;
+  }
+
+  if (!hasSavedPlan) {
+    return (
+      <AppShell>
+        <EmptyPlanState
+          title="Chưa có kế hoạch dinh dưỡng"
+          description="Sau khi bạn nhập chỉ số, AI sẽ tính calo, macro và gợi ý thực đơn cá nhân."
+        />
+      </AppShell>
+    );
+  }
   const targets = generatedPlan?.nutritionPlan?.dailyTargets || {
     calories: plan.targetCalories,
     protein: plan.protein,
@@ -25,13 +44,13 @@ export default function NutritionPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl px-6 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-widest text-zinc-500">
               Dinh dưỡng
             </p>
-            <h1 className="mt-2 text-5xl font-bold tracking-tight">
+            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-5xl">
               Thực đơn {targets.calories} kcal
             </h1>
             <p className="mt-4 max-w-2xl text-zinc-400">
@@ -46,6 +65,8 @@ export default function NutritionPage() {
             Xem lịch tập
           </Link>
         </div>
+
+        <NutritionTracker plannedMeals={meals} />
 
         <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <motion.div
@@ -135,4 +156,20 @@ export default function NutritionPage() {
       </div>
     </AppShell>
   );
+}
+
+function NutritionTracker({ plannedMeals }) {
+  const date = toDateKey(new Date());
+  const [meals, setMeals] = useState(() => plannedMeals.map((meal, mealIndex) => ({ mealIndex, name: meal.name, completed: false, foods: (meal.foods || []).map((food) => ({ ...food, calories: 0, protein: 0 })) })));
+  const [query, setQuery] = useState("");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { getNutritionLog(date).then((log) => { if (log.meals?.length) setMeals(log.meals); }).catch(() => {}); }, [date]);
+  const updateFood = (mealIndex, foodIndex, grams) => setMeals((current) => current.map((meal, i) => i === mealIndex ? { ...meal, foods: meal.foods.map((food, j) => j === foodIndex ? { ...food, grams: Number(grams) } : food) } : meal));
+  const save = async () => { setSaving(true); try { const log = await saveNutritionLog(date, meals); setMeals(log.meals); } finally { setSaving(false); } };
+  const alternatives = ["Cơm", "Khoai lang", "Yến mạch", "Ức gà", "Cá", "Bò nạc", "Trứng", "Sữa chua Hy Lạp", "Đậu phụ", "Rau xanh"].filter((name) => name.toLowerCase().includes(query.toLowerCase()));
+  return <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-2xl font-bold">Nhật ký ăn hôm nay</h2><p className="mt-1 text-sm text-zinc-500">Đánh dấu bữa và sửa gram thực tế.</p></div><button onClick={save} disabled={saving} className="rounded-xl bg-white px-5 py-3 font-medium text-black">{saving ? "Đang lưu" : "Lưu nhật ký"}</button></div>
+    <div className="mt-5 grid gap-4 md:grid-cols-2">{meals.map((meal, mealIndex) => <article key={mealIndex} className="rounded-2xl border border-white/10 bg-black/30 p-4"><label className="flex items-center gap-3 font-semibold"><input type="checkbox" checked={meal.completed} onChange={(e) => setMeals((current) => current.map((item,i) => i === mealIndex ? { ...item, completed: e.target.checked } : item))} className="size-5 accent-white" />{meal.name}</label><div className="mt-4 space-y-2">{meal.foods.map((food, foodIndex) => <div key={`${food.name}-${foodIndex}`} className="flex items-center justify-between gap-3 text-sm"><span className="text-zinc-400">{food.name}</span><input type="number" value={food.grams} onChange={(e) => updateFood(mealIndex, foodIndex, e.target.value)} className="w-24 rounded-lg border border-white/10 bg-black p-2 text-right" /></div>)}</div></article>)}</div>
+    <div className="mt-5"><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm thực phẩm thay thế..." className="w-full rounded-xl border border-white/10 bg-black/40 p-3" />{query && <div className="mt-2 flex flex-wrap gap-2">{alternatives.map((name) => <button key={name} type="button" onClick={() => { setMeals((current) => current.map((meal,i) => i === 0 ? { ...meal, foods: [...meal.foods, { name, grams: 100, calories: 0, protein: 0 }] } : meal)); setQuery(""); }} className="rounded-full border border-white/10 px-3 py-2 text-sm">+ {name}</button>)}</div>}</div>
+  </section>;
 }

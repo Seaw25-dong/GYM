@@ -149,6 +149,16 @@ const exerciseGroups = [
       },
     ],
   },
+  {
+    group: "Cardio & Conditioning",
+    exercises: [
+      { name: "Incline Treadmill Walk", equipment: "Máy chạy bộ", level: "Cơ bản", muscles: ["Tim mạch", "Chân"], instruction: "Đi bộ dốc ở tốc độ có thể duy trì, giữ thân thẳng và không bám tay quá nhiều. Có thể tập 15–30 phút sau buổi tạ.", mediaSearchQuery: "incline treadmill walking form" },
+      { name: "Stationary Bike", equipment: "Xe đạp tại chỗ", level: "Cơ bản", muscles: ["Tim mạch", "Chân"], instruction: "Chỉnh yên phù hợp, đạp nhịp đều 20–40 phút hoặc chia interval ngắn theo thể lực.", mediaSearchQuery: "stationary bike cardio form" },
+      { name: "Rowing Machine", equipment: "Máy chèo thuyền", level: "Trung cấp", muscles: ["Tim mạch", "Toàn thân"], instruction: "Đạp chân trước, ngả thân nhẹ rồi kéo tay; khi trở lại thực hiện theo thứ tự ngược lại.", mediaSearchQuery: "rowing machine technique animation" },
+      { name: "Jump Rope", equipment: "Dây nhảy", level: "Trung cấp", muscles: ["Tim mạch", "Bắp chân"], instruction: "Nhảy thấp, tiếp đất nhẹ và xoay dây bằng cổ tay. Bắt đầu bằng các hiệp 30–60 giây.", mediaSearchQuery: "jump rope basic technique" },
+      { name: "Elliptical", equipment: "Máy elliptical", level: "Cơ bản", muscles: ["Tim mạch", "Toàn thân"], instruction: "Giữ nhịp ổn định, thân người thẳng và điều chỉnh kháng lực để vẫn kiểm soát được hơi thở.", mediaSearchQuery: "elliptical trainer form" },
+    ],
+  },
 ];
 
 const fallbackWorkoutExercises = [

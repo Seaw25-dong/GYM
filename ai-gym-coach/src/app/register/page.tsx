@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ToastMessage } from "@/components/toast-message";
+import { PasswordInput } from "@/components/password-input";
+import { AuthPageShell } from "@/components/auth-page-shell";
 import { registerUser } from "@/lib/api";
 
 const emailRegex = /^\S+@\S+\.\S+$/;
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [toast, setToast] = useState("");
@@ -22,6 +25,11 @@ export default function RegisterPage() {
 
     if (!emailRegex.test(email)) {
       showToast("Email không đúng định dạng", "error");
+      return;
+    }
+
+    if (username.trim().length < 3 || username.trim().length > 30) {
+      showToast("Username phải có từ 3 đến 30 ký tự", "error");
       return;
     }
 
@@ -38,7 +46,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      const data = await registerUser({ email, password });
+      const data = await registerUser({ email, username: username.trim(), password });
       showToast(data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
       setPassword("");
       setConfirmPassword("");
@@ -56,21 +64,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-6 py-10 text-white">
+    <AuthPageShell
+      title="Xây nền tảng mạnh hơn từ dữ liệu của chính bạn."
+      description="Tạo tài khoản để lưu chỉ số, nhận lịch tập và dinh dưỡng được cá nhân hóa theo mục tiêu."
+    >
       <ToastMessage message={toast} type={toastType} />
-      <video autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover opacity-40">
-        <source src="/video/15079739_1920_1080_30fps.mp4" type="video/mp4" />
-      </video>
-      <div className="absolute inset-0 bg-black/65" />
-      <div className="absolute inset-0 opacity-[0.08]" style={{
-        backgroundImage:
-          "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-        backgroundSize: "56px 56px",
-      }} />
-
       <form
         onSubmit={handleSubmit}
-        className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-black/55 p-8 shadow-2xl shadow-black/50 backdrop-blur-xl"
+        className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950/80 p-5 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-8"
       >
         <Link
           href="/"
@@ -80,42 +81,50 @@ export default function RegisterPage() {
           Quay lại
         </Link>
 
-        <h1 className="mt-8 text-4xl font-bold">Đăng ký</h1>
+        <h1 className="mt-7 text-3xl font-bold sm:mt-8 sm:text-4xl">Đăng ký</h1>
         <p className="mt-3 text-zinc-400">
           Sau khi đăng ký, hệ thống sẽ gửi email xác thực. Link có hiệu lực trong 10 phút.
         </p>
 
         <div className="mt-8 grid gap-5">
           <label>
+            <span className="mb-2 block text-sm text-zinc-500">Username</span>
+            <input
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              autoComplete="username"
+              minLength={3}
+              maxLength={30}
+              className="w-full rounded-2xl border border-white/10 bg-black/50 px-5 py-4 outline-none transition focus:border-white/30"
+            />
+            <span className="mt-2 block text-xs text-zinc-600">
+              Tên này sẽ hiển thị trong ứng dụng.
+            </span>
+          </label>
+          <label>
             <span className="mb-2 block text-sm text-zinc-500">Email</span>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
               className="w-full rounded-2xl border border-white/10 bg-black/50 px-5 py-4 outline-none transition focus:border-white/30"
             />
           </label>
-          <label>
-            <span className="mb-2 block text-sm text-zinc-500">Mật khẩu</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/50 px-5 py-4 outline-none transition focus:border-white/30"
-            />
-          </label>
-          <label>
-            <span className="mb-2 block text-sm text-zinc-500">Xác nhận mật khẩu</span>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/50 px-5 py-4 outline-none transition focus:border-white/30"
-            />
-            <span className="mt-2 block text-xs text-zinc-600">
-              Mật khẩu phải dài hơn 8 ký tự.
-            </span>
-          </label>
+          <PasswordInput
+            label="Mật khẩu"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="new-password"
+          />
+          <PasswordInput
+            label="Xác nhận mật khẩu"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            autoComplete="new-password"
+            hint="Mật khẩu phải dài hơn 8 ký tự."
+          />
         </div>
 
         <button
@@ -133,6 +142,6 @@ export default function RegisterPage() {
           </Link>
         </p>
       </form>
-    </main>
+    </AuthPageShell>
   );
 }

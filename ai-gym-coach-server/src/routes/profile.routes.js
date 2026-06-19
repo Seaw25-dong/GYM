@@ -1,14 +1,17 @@
 import express from "express";
 
+import { requireAuth } from "../middleware/requireAuth.js";
 import Profile from "../models/Profile.js";
 import { calculateFitnessPlan } from "../services/fitness.service.js";
 import { createHttpError } from "../utils/httpError.js";
 
 const router = express.Router();
 
-router.get("/", async (_req, res, next) => {
+router.use(requireAuth);
+
+router.get("/", async (req, res, next) => {
   try {
-    const profiles = await Profile.find().sort({ createdAt: -1 });
+    const profiles = await Profile.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json({ success: true, data: profiles });
   } catch (error) {
     next(error);
@@ -18,7 +21,11 @@ router.get("/", async (_req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const payload = normalizeProfilePayload(req.body);
-    const profile = await Profile.create(payload);
+    const profile = await Profile.findOneAndUpdate(
+      { user: req.user._id },
+      { ...payload, user: req.user._id },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
     const plan = calculateFitnessPlan(profile);
 
     res.status(201).json({ success: true, data: { profile, plan } });
@@ -29,7 +36,7 @@ router.post("/", async (req, res, next) => {
 
 router.get("/:profileId", async (req, res, next) => {
   try {
-    const profile = await Profile.findById(req.params.profileId);
+    const profile = await Profile.findOne({ _id: req.params.profileId, user: req.user._id });
 
     if (!profile) {
       throw createHttpError(404, "Profile not found");
@@ -50,7 +57,7 @@ router.get("/:profileId", async (req, res, next) => {
 router.put("/:profileId", async (req, res, next) => {
   try {
     const payload = normalizeProfilePayload(req.body);
-    const profile = await Profile.findByIdAndUpdate(req.params.profileId, payload, {
+    const profile = await Profile.findOneAndUpdate({ _id: req.params.profileId, user: req.user._id }, payload, {
       new: true,
       runValidators: true,
     });
@@ -73,7 +80,7 @@ router.put("/:profileId", async (req, res, next) => {
 
 router.delete("/:profileId", async (req, res, next) => {
   try {
-    const profile = await Profile.findByIdAndDelete(req.params.profileId);
+    const profile = await Profile.findOneAndDelete({ _id: req.params.profileId, user: req.user._id });
 
     if (!profile) {
       throw createHttpError(404, "Profile not found");
@@ -95,6 +102,7 @@ function normalizeProfilePayload(payload) {
     bodyFat: payload.bodyFat === "" || payload.bodyFat == null ? null : Number(payload.bodyFat),
     activity: payload.activity,
     gymDays: Number(payload.gymDays),
+    trainingDays: Array.isArray(payload.trainingDays) ? payload.trainingDays.map(Number) : [],
     sportDays: Number(payload.sportDays),
     experience: payload.experience,
     goal: payload.goal,

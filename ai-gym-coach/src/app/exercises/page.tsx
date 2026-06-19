@@ -9,12 +9,12 @@ import { exerciseGroups } from "@/lib/exercise-library";
 export default function ExercisesPage() {
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl px-6 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-10">
           <p className="text-sm uppercase tracking-widest text-zinc-500">
             Thư viện bài tập
           </p>
-          <h1 className="mt-2 text-5xl font-bold tracking-tight">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-5xl">
             Bài tập theo từng nhóm cơ
           </h1>
           <p className="mt-4 max-w-3xl text-zinc-400">

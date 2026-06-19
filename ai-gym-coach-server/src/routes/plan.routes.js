@@ -1,10 +1,13 @@
 import express from "express";
 
+import { requireAuth } from "../middleware/requireAuth.js";
 import Profile from "../models/Profile.js";
 import { calculateFitnessPlan } from "../services/fitness.service.js";
 import { createHttpError } from "../utils/httpError.js";
 
 const router = express.Router();
+
+router.use(requireAuth);
 
 router.post("/calculate", (req, res, next) => {
   try {
@@ -17,7 +20,7 @@ router.post("/calculate", (req, res, next) => {
 
 router.get("/:profileId", async (req, res, next) => {
   try {
-    const profile = await Profile.findById(req.params.profileId);
+    const profile = await Profile.findOne({ _id: req.params.profileId, user: req.user._id });
 
     if (!profile) {
       throw createHttpError(404, "Profile not found");
@@ -37,7 +40,7 @@ router.get("/:profileId", async (req, res, next) => {
 
 router.get("/:profileId/nutrition", async (req, res, next) => {
   try {
-    const profile = await Profile.findById(req.params.profileId);
+    const profile = await Profile.findOne({ _id: req.params.profileId, user: req.user._id });
 
     if (!profile) {
       throw createHttpError(404, "Profile not found");
@@ -60,7 +63,7 @@ router.get("/:profileId/nutrition", async (req, res, next) => {
 
 router.get("/:profileId/workouts", async (req, res, next) => {
   try {
-    const profile = await Profile.findById(req.params.profileId);
+    const profile = await Profile.findOne({ _id: req.params.profileId, user: req.user._id });
 
     if (!profile) {
       throw createHttpError(404, "Profile not found");

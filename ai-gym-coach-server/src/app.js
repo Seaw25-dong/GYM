@@ -11,6 +11,7 @@ import healthRoutes from "./routes/health.routes.js";
 import planRoutes from "./routes/plan.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import workoutRoutes from "./routes/workout.routes.js";
+import trackingRoutes from "./routes/tracking.routes.js";
 
 const app = express();
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
@@ -20,6 +21,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
 app.use(helmet());
 app.use(
   cors({
+    credentials: true,
     origin(origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -39,6 +41,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/plans", planRoutes);
 app.use("/api/workouts", workoutRoutes);
+app.use("/api/tracking", trackingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

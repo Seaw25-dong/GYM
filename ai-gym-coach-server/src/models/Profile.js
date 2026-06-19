@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 
 const profileSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     displayName: {
       type: String,
       trim: true,
@@ -47,6 +54,7 @@ const profileSchema = new mongoose.Schema(
       max: 7,
       required: true,
     },
+    trainingDays: { type: [Number], default: [] },
     sportDays: {
       type: Number,
       min: 0,

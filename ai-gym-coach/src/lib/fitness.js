@@ -52,6 +52,23 @@ function calculateFitnessPlan(profile) {
   const goal = goalSettings[profile.goal] || goalSettings.recomp;
   const multiplier = activityMultipliers[profile.activity] || activityMultipliers.light;
   const bmr = calculateBmr(profile);
+  const hasRequiredMetrics = Boolean(weight && height && toNumber(profile.age) && gymDays);
+
+  if (!hasRequiredMetrics) {
+    return {
+      bmi: 0,
+      bmr: 0,
+      tdee: 0,
+      targetCalories: 0,
+      protein: 0,
+      fat: 0,
+      carbs: 0,
+      goalLabel: goal.label,
+      focus: "",
+      workoutSplit: [],
+      mealPlan: [],
+    };
+  }
   const exerciseAdjustment = Math.round((gymDays * 90 + sportDays * 70) / 7);
   const tdee = Math.round(bmr * multiplier + exerciseAdjustment);
   const targetCalories = Math.max(1200, tdee + goal.calorieOffset);
@@ -167,6 +184,7 @@ const defaultProfile = {
   bodyFat: "",
   activity: "light",
   gymDays: "",
+  trainingDays: [],
   sportDays: "",
   experience: "intermediate",
   goal: "muscle_gain",

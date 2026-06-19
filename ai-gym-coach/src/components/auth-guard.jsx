@@ -4,6 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { getAuthToken } from "@/lib/auth";
+import { clearAuthSession } from "@/lib/auth";
+import { refreshAuthSession } from "@/lib/api";
 
 function AuthGuard({ children }) {
   const pathname = usePathname();
@@ -11,14 +13,27 @@ function AuthGuard({ children }) {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const token = getAuthToken();
+    let active = true;
 
-    if (!token) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-      return;
+    async function checkSession() {
+      if (getAuthToken()) {
+        if (active) setAllowed(true);
+        return;
+      }
+
+      try {
+        await refreshAuthSession();
+        if (active) setAllowed(true);
+      } catch {
+        clearAuthSession();
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      }
     }
 
-    window.requestAnimationFrame(() => setAllowed(true));
+    checkSession();
+    return () => {
+      active = false;
+    };
   }, [pathname, router]);
 
   if (!allowed) {

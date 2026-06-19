@@ -116,7 +116,7 @@ const aiPlanSchema = {
   },
 };
 
-async function generateAiPlan({ profile, calculatedPlan }) {
+async function generateAiPlan({ profile, calculatedPlan, history = null, adjustmentMode = false }) {
   if (!process.env.OPENAI_API_KEY) {
     throw createHttpError(503, "OPENAI_API_KEY is not configured");
   }
@@ -133,15 +133,20 @@ async function generateAiPlan({ profile, calculatedPlan }) {
         {
           role: "system",
           content:
-            "Bạn là AI fitness coach cho người Việt. Sinh plan thực tế, an toàn, dễ hiểu bằng tiếng Việt. Giữ tên bài tập gym bằng tiếng Anh khi phổ biến. Không thay đổi các chỉ số calo/macro đã tính; chỉ dùng chúng làm ràng buộc.",
+            adjustmentMode
+              ? "Bạn là AI fitness coach cho người Việt. Hãy điều chỉnh plan dựa trên lịch sử thực tế. Chỉ thay đổi calo theo bước nhỏ tối đa 200 kcal, giữ protein hợp lý và giải thích chiến lược. Có thể điều chỉnh volume/bài tập theo workout logs."
+              : "Bạn là AI fitness coach cho người Việt. Sinh plan thực tế, an toàn, dễ hiểu bằng tiếng Việt. Giữ tên bài tập gym bằng tiếng Anh khi phổ biến. Không thay đổi các chỉ số calo/macro đã tính; chỉ dùng chúng làm ràng buộc.",
         },
         {
           role: "user",
           content: JSON.stringify({
             profile: normalizeForAi(profile),
             calculatedPlan,
+            recentHistory: history,
+            adjustmentMode,
             requirements: [
               "Workout plan phải khớp số buổi gym mỗi tuần.",
+              "Trong lịch mỗi tuần phải có ít nhất một gợi ý cardio hoặc conditioning phù hợp; khi giảm mỡ hãy ghi rõ cách thêm cardio mà không ảnh hưởng phục hồi.",
               "Mỗi buổi tập bắt buộc có 5-6 bài, gồm bài chính và bài phụ.",
               "Mỗi bài tập cần có nhóm cơ chính và mediaSearchQuery bằng tiếng Anh để tìm video/animation.",
               "Meal plan phải bám sát target calories và macro.",

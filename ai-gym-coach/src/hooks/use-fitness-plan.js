@@ -2,29 +2,43 @@
 
 import { useEffect, useState } from "react";
 
+import { getCurrentFitnessPlan } from "@/lib/api";
 import { calculateFitnessPlan, defaultProfile } from "@/lib/fitness";
 
 function useFitnessPlan() {
-  const [ready, setReady] = useState(false);
+  const [data, setData] = useState({
+    profile: defaultProfile,
+    plan: calculateFitnessPlan(defaultProfile),
+    generatedPlan: null,
+    hasSavedPlan: false,
+    isLoading: true,
+  });
 
   useEffect(() => {
-    window.requestAnimationFrame(() => setReady(true));
+    let active = true;
+
+    getCurrentFitnessPlan()
+      .then((result) => {
+        if (!active) return;
+        const profile = result.profile || defaultProfile;
+        setData({
+          profile,
+          plan: result.calculatedPlan || calculateFitnessPlan(profile),
+          generatedPlan: result.generatedPlan || null,
+          hasSavedPlan: Boolean(result.profile),
+          isLoading: false,
+        });
+      })
+      .catch(() => {
+        if (active) setData((current) => ({ ...current, isLoading: false }));
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const savedProfile =
-    ready && typeof window !== "undefined"
-      ? window.localStorage.getItem("ai-gym-profile")
-      : null;
-  const savedGeneratedPlan =
-    ready && typeof window !== "undefined"
-      ? window.localStorage.getItem("ai-gym-generated-plan")
-      : null;
-  const profile = savedProfile ? JSON.parse(savedProfile) : defaultProfile;
-  const plan = calculateFitnessPlan(profile);
-  const generatedPlan = savedGeneratedPlan ? JSON.parse(savedGeneratedPlan) : null;
-  const hasSavedPlan = Boolean(savedProfile);
-
-  return { profile, plan, generatedPlan, hasSavedPlan };
+  return data;
 }
 
 export { useFitnessPlan };

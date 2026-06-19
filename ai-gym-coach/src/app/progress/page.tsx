@@ -1,182 +1,51 @@
 "use client";
 
-import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import Link from "next/link";
-
+import Image from "next/image";
+import { Camera, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-nav";
-import { TermTooltip } from "@/components/term-tooltip";
-import { useFitnessPlan } from "@/hooks/use-fitness-plan";
+import { getProgressData, saveProgressEntry } from "@/lib/api";
+import { toDateKey } from "@/lib/workout-schedule";
 
-const StrengthChart = dynamic(
-  () => import("@/components/progress-charts").then((mod) => mod.StrengthChart),
-  {
-    ssr: false,
-    loading: () => <div className="h-full rounded-2xl bg-black/20" />,
-  }
-);
-
-const WeightChart = dynamic(
-  () => import("@/components/progress-charts").then((mod) => mod.WeightChart),
-  {
-    ssr: false,
-    loading: () => <div className="h-full rounded-2xl bg-black/20" />,
-  }
-);
+const WeightChart = dynamic(() => import("@/components/progress-charts").then((m) => m.WeightChart), { ssr: false });
+const emptyForm = { weight: "", bodyFat: "", waist: "", chest: "", arm: "", thigh: "", photoUrl: "", notes: "" };
 
 export default function ProgressPage() {
-  const { plan } = useFitnessPlan();
-
-  return (
-    <AppShell>
-      <div className="mx-auto max-w-7xl px-6 py-12">
-
-        {/* Header */}
-        <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-widest text-zinc-500">
-              Phân tích
-            </p>
-
-            <h1 className="mt-2 text-5xl font-bold tracking-tight">
-              Theo dõi tiến độ
-            </h1>
-
-            <p className="mt-4 max-w-2xl text-zinc-400">
-              Theo dõi xu hướng {plan.goalLabel.toLowerCase()} dựa trên mục tiêu{" "}
-              {plan.targetCalories} kcal và nền tảng {plan.protein}g protein mỗi ngày.
-            </p>
-          </div>
-
-          <Link
-            href="/workout"
-            className="w-fit rounded-2xl bg-white px-6 py-3 font-medium text-black transition hover:scale-105"
-          >
-            Ghi buổi tập mới
-          </Link>
-        </div>
-
-        {/* Stats */}
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            { id: "target", title: "Calo mục tiêu", value: `${plan.targetCalories}` },
-            { id: "bench", title: "Bench PR", value: "85kg" },
-            { id: "tdee", title: <TermTooltip term="TDEE" />, value: `${plan.tdee}` },
-            { id: "protein", title: "Protein", value: `${plan.protein}g` },
-          ].map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
-            >
-              <p className="text-sm text-zinc-500">
-                {item.title}
-              </p>
-
-              <h2 className="mt-4 text-4xl font-bold">
-                {item.value}
-              </h2>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Charts */}
-        <div className="mt-8 grid gap-8 xl:grid-cols-2">
-
-          {/* Strength Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
-          >
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold">
-                Tiến độ Bench Press
-              </h3>
-
-              <p className="mt-2 text-zinc-500">
-                Ước tính mức 1RM trong 5 tuần gần nhất
-              </p>
-            </div>
-
-            <div className="h-[320px] min-w-0">
-              <StrengthChart />
-            </div>
-          </motion.div>
-
-          {/* Weight Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
-          >
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold">
-                Xu hướng cân nặng
-              </h3>
-
-              <p className="mt-2 text-zinc-500">
-                Phân tích thay đổi cân nặng theo thời gian
-              </p>
-            </div>
-
-            <div className="h-[320px] min-w-0">
-              <WeightChart />
-            </div>
-          </motion.div>
-        </div>
-
-        {/* AI Insights */}
-        <motion.div
-          initial={{ opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur"
-        >
-          <p className="text-sm uppercase tracking-widest text-zinc-500">
-            Phân tích AI
-          </p>
-
-          <h2 className="mt-4 text-4xl font-bold leading-tight">
-            Hiệu suất đang đi đúng hướng
-          </h2>
-
-          <div className="mt-6 grid gap-6 xl:grid-cols-3">
-
-            {[
-              {
-                title: "Sức mạnh tăng",
-                text: "Bench Press cải thiện khoảng 13.3% trong 5 tuần gần nhất.",
-              },
-              {
-                title: "Xu hướng phục hồi",
-                text: "Điểm phục hồi ổn định dù volume tập tăng.",
-              },
-              {
-                title: "Tiến độ giảm mỡ",
-                text: "Xu hướng cân nặng cho thấy tốc độ giảm mỡ đang bền vững.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-white/10 bg-black/30 p-5"
-              >
-                <h3 className="text-xl font-semibold">
-                  {item.title}
-                </h3>
-
-                <p className="mt-3 leading-relaxed text-zinc-400">
-                  {item.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+  const [data, setData] = useState({ entries: [], prs: {} });
+  const [form, setForm] = useState(emptyForm);
+  const [date, setDate] = useState(() => toDateKey(new Date()));
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { getProgressData().then(setData).catch(() => {}); }, []);
+  const chartData = useMemo(() => data.entries.map((e) => ({ date: e.date.slice(5), weight: e.weight })), [data.entries]);
+  const topPrs = Object.entries(data.prs).sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 4);
+  const change = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const photo = (event) => {
+    const file = event.target.files?.[0]; if (!file) return;
+    if (file.size > 650 * 1024) return alert("Ảnh cần nhỏ hơn 650 KB");
+    const reader = new FileReader(); reader.onload = () => change("photoUrl", String(reader.result)); reader.readAsDataURL(file);
+  };
+  const submit = async (event) => {
+    event.preventDefault(); setSaving(true);
+    try { const entry = await saveProgressEntry(date, form); setData((current) => ({ ...current, entries: [...current.entries.filter((e) => e.date !== date), entry].sort((a,b) => a.date.localeCompare(b.date)) })); setForm(emptyForm); }
+    finally { setSaving(false); }
+  };
+  return <AppShell><div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+    <h1 className="text-3xl font-bold sm:text-5xl">Theo dõi tiến độ thật</h1><p className="mt-3 text-zinc-500">Cân nặng, số đo, ảnh và PR đều lấy từ MongoDB.</p>
+    <div className="mt-8 grid gap-6 xl:grid-cols-[0.75fr_1.25fr]">
+      <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/5 p-5">
+        <h2 className="text-xl font-semibold">Ghi chỉ số</h2>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-5 w-full rounded-xl bg-black/40 p-3" />
+        <div className="mt-4 grid grid-cols-2 gap-3">{[["weight","Cân nặng kg"],["bodyFat","Body fat %"],["waist","Eo cm"],["chest","Ngực cm"],["arm","Tay cm"],["thigh","Đùi cm"]].map(([key,label]) => <label key={key} className="text-sm text-zinc-500">{label}<input type="number" step="0.1" required={key === "weight"} value={form[key]} onChange={(e) => change(key,e.target.value)} className="mt-1 w-full rounded-xl border border-white/10 bg-black/40 p-3 text-white" /></label>)}</div>
+        <label className="mt-4 flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 p-3 text-sm"><Camera className="size-4" />Thêm ảnh<input type="file" accept="image/*" onChange={photo} className="sr-only" /></label>
+        <textarea value={form.notes} onChange={(e) => change("notes",e.target.value)} placeholder="Ghi chú" className="mt-4 w-full rounded-xl border border-white/10 bg-black/40 p-3" />
+        <button disabled={saving} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white p-3 font-medium text-black"><Plus className="size-4" />{saving ? "Đang lưu" : "Lưu tiến độ"}</button>
+      </form>
+      <div className="grid gap-6">
+        <section className="h-[340px] rounded-3xl border border-white/10 bg-white/5 p-5"><h2 className="mb-5 text-xl font-semibold">Xu hướng cân nặng</h2>{chartData.length ? <div className="h-[260px]"><WeightChart data={chartData} /></div> : <p className="text-zinc-600">Chưa có dữ liệu.</p>}</section>
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">{topPrs.length ? topPrs.map(([name,value]) => <div key={name} className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="truncate text-sm text-zinc-500">{name}</p><strong className="mt-2 block text-2xl">{String(value)}kg</strong><span className="text-xs text-zinc-600">1RM ước tính</span></div>) : <p className="col-span-full text-zinc-600">PR sẽ xuất hiện sau khi ghi set tập.</p>}</section>
       </div>
-    </AppShell>
-  );
+    </div>
+    <section className="mt-8"><h2 className="text-2xl font-bold">Ảnh tiến độ</h2><div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">{data.entries.filter((e) => e.photoUrl).map((e) => <article key={e.date} className="overflow-hidden rounded-2xl border border-white/10"><Image unoptimized src={e.photoUrl} alt={`Tiến độ ${e.date}`} width={400} height={500} className="aspect-[4/5] w-full object-cover" /><p className="p-3 text-sm text-zinc-500">{e.date} · {e.weight}kg</p></article>)}</div></section>
+  </div></AppShell>;
 }

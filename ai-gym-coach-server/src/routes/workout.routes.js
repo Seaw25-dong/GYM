@@ -1,39 +1,49 @@
 import express from "express";
 
-import Profile from "../models/Profile.js";
+import { requireAuth } from "../middleware/requireAuth.js";
 import WorkoutLog from "../models/WorkoutLog.js";
 import { createHttpError } from "../utils/httpError.js";
 
 const router = express.Router();
+const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
-router.get("/:profileId/logs", async (req, res, next) => {
+router.use(requireAuth);
+
+router.get("/logs", async (req, res, next) => {
   try {
-    const logs = await WorkoutLog.find({ profile: req.params.profileId }).sort({
-      createdAt: -1,
-    });
-
+    const logs = await WorkoutLog.find({ user: req.user._id }).sort({ scheduledDate: 1 });
     res.json({ success: true, data: logs });
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/:profileId/logs", async (req, res, next) => {
+router.put("/logs/:scheduledDate", async (req, res, next) => {
   try {
-    const profile = await Profile.findById(req.params.profileId);
-
-    if (!profile) {
-      throw createHttpError(404, "Profile not found");
+    const { scheduledDate } = req.params;
+    if (!datePattern.test(scheduledDate)) {
+      throw createHttpError(400, "Ngày tập không hợp lệ");
     }
 
-    const log = await WorkoutLog.create({
-      profile: profile._id,
-      workoutName: req.body.workoutName,
-      notes: req.body.notes || "",
-      sets: normalizeSets(req.body.sets || []),
-    });
+    const completed = Boolean(req.body.completed);
+    const log = await WorkoutLog.findOneAndUpdate(
+      { user: req.user._id, scheduledDate },
+      {
+        user: req.user._id,
+        scheduledDate,
+        sessionIndex: Math.max(0, Number(req.body.sessionIndex) || 0),
+        workoutName: String(req.body.workoutName || "Buổi tập").trim(),
+        notes: String(req.body.notes || "").trim(),
+        sets: normalizeSets(req.body.sets || []),
+        exercises: Array.isArray(req.body.exercises) ? req.body.exercises : [],
+        completed,
+        completedAt: completed ? new Date() : null,
+      },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
 
-    res.status(201).json({ success: true, data: log });
+    req.app.get("io")?.to(`user:${req.user._id}`).emit("workout:updated", log);
+    res.json({ success: true, data: log });
   } catch (error) {
     next(formatMongooseError(error));
   }
@@ -41,9 +51,9 @@ router.post("/:profileId/logs", async (req, res, next) => {
 
 function normalizeSets(sets) {
   return sets.map((set) => ({
-    exerciseName: set.exerciseName,
-    weight: Number(set.weight),
-    reps: Number(set.reps),
+    exerciseName: String(set.exerciseName || "").trim(),
+    weight: Math.max(0, Number(set.weight) || 0),
+    reps: Math.max(1, Number(set.reps) || 1),
     completedAt: set.completedAt ? new Date(set.completedAt) : new Date(),
   }));
 }
@@ -51,9 +61,8 @@ function normalizeSets(sets) {
 function formatMongooseError(error) {
   if (error.name === "ValidationError") {
     const details = Object.values(error.errors).map((item) => item.message);
-    return createHttpError(400, "Invalid workout log payload", details);
+    return createHttpError(400, "Dữ liệu buổi tập không hợp lệ", details);
   }
-
   return error;
 }
 

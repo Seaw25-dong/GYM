@@ -30,8 +30,22 @@ const workoutLogSchema = new mongoose.Schema(
     profile: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Profile",
-      required: true,
       index: true,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
+    scheduledDate: {
+      type: String,
+      trim: true,
+      match: /^\d{4}-\d{2}-\d{2}$/,
+    },
+    sessionIndex: {
+      type: Number,
+      min: 0,
+      default: 0,
     },
     workoutName: {
       type: String,
@@ -43,15 +57,29 @@ const workoutLogSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    completed: {
+      type: Boolean,
+      default: false,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
     sets: {
       type: [setSchema],
       default: [],
     },
+    exercises: { type: [mongoose.Schema.Types.Mixed], default: [] },
   },
   {
     timestamps: true,
     versionKey: false,
   }
+);
+
+workoutLogSchema.index(
+  { user: 1, scheduledDate: 1 },
+  { unique: true, partialFilterExpression: { user: { $exists: true } } }
 );
 
 const WorkoutLog = mongoose.model("WorkoutLog", workoutLogSchema);

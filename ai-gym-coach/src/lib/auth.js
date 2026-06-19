@@ -13,20 +13,38 @@ function getAuthUser() {
   return rawUser ? JSON.parse(rawUser) : null;
 }
 
-function saveAuthSession({ token, user }) {
-  window.localStorage.setItem(authTokenKey, token);
+function saveAuthSession({ accessToken, user }) {
+  window.localStorage.setItem(authTokenKey, accessToken);
   window.localStorage.setItem(authUserKey, JSON.stringify(user));
   clearFitnessData();
+  notifyAuthChanged();
+}
+
+function updateAuthUser(user) {
+  window.localStorage.setItem(authUserKey, JSON.stringify(user));
+  notifyAuthChanged();
 }
 
 function clearAuthSession() {
   window.localStorage.removeItem(authTokenKey);
   window.localStorage.removeItem(authUserKey);
   clearFitnessData();
+  notifyAuthChanged();
 }
 
 function clearFitnessData() {
   fitnessKeys.forEach((key) => window.localStorage.removeItem(key));
 }
 
-export { clearAuthSession, clearFitnessData, getAuthToken, getAuthUser, saveAuthSession };
+function notifyAuthChanged() {
+  window.dispatchEvent(new Event("ai-gym-auth-change"));
+}
+
+export {
+  clearAuthSession,
+  clearFitnessData,
+  getAuthToken,
+  getAuthUser,
+  saveAuthSession,
+  updateAuthUser,
+};
