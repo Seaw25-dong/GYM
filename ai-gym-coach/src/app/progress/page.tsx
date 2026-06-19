@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 
 import { AppShell } from "@/components/app-nav";
+import { TermTooltip } from "@/components/term-tooltip";
 import { useFitnessPlan } from "@/hooks/use-fitness-plan";
 
 const StrengthChart = dynamic(
@@ -34,16 +35,16 @@ export default function ProgressPage() {
         <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-widest text-zinc-500">
-              Analytics
+              Phân tích
             </p>
 
             <h1 className="mt-2 text-5xl font-bold tracking-tight">
-              Progress Tracking
+              Theo dõi tiến độ
             </h1>
 
             <p className="mt-4 max-w-2xl text-zinc-400">
-              Track your {plan.goalLabel.toLowerCase()} trend against a {plan.targetCalories}
-              kcal target and {plan.protein}g protein baseline.
+              Theo dõi xu hướng {plan.goalLabel.toLowerCase()} dựa trên mục tiêu{" "}
+              {plan.targetCalories} kcal và nền tảng {plan.protein}g protein mỗi ngày.
             </p>
           </div>
 
@@ -51,31 +52,31 @@ export default function ProgressPage() {
             href="/workout"
             className="w-fit rounded-2xl bg-white px-6 py-3 font-medium text-black transition hover:scale-105"
           >
-            Log Next Workout
+            Ghi buổi tập mới
           </Link>
         </div>
 
         {/* Stats */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[
-            ["Target Calories", `${plan.targetCalories}`],
-            ["Bench PR", "85kg"],
-            ["TDEE", `${plan.tdee}`],
-            ["Protein", `${plan.protein}g`],
-          ].map(([title, value], index) => (
+            { id: "target", title: "Calo mục tiêu", value: `${plan.targetCalories}` },
+            { id: "bench", title: "Bench PR", value: "85kg" },
+            { id: "tdee", title: <TermTooltip term="TDEE" />, value: `${plan.tdee}` },
+            { id: "protein", title: "Protein", value: `${plan.protein}g` },
+          ].map((item, index) => (
             <motion.div
-              key={title}
+              key={item.id}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
             >
               <p className="text-sm text-zinc-500">
-                {title}
+                {item.title}
               </p>
 
               <h2 className="mt-4 text-4xl font-bold">
-                {value}
+                {item.value}
               </h2>
             </motion.div>
           ))}
@@ -93,11 +94,11 @@ export default function ProgressPage() {
           >
             <div className="mb-6">
               <h3 className="text-2xl font-bold">
-                Bench Progression
+                Tiến độ Bench Press
               </h3>
 
               <p className="mt-2 text-zinc-500">
-                Estimated 1RM progression over 5 weeks
+                Ước tính mức 1RM trong 5 tuần gần nhất
               </p>
             </div>
 
@@ -115,11 +116,11 @@ export default function ProgressPage() {
           >
             <div className="mb-6">
               <h3 className="text-2xl font-bold">
-                Weight Trend
+                Xu hướng cân nặng
               </h3>
 
               <p className="mt-2 text-zinc-500">
-                Body weight trend analysis
+                Phân tích thay đổi cân nặng theo thời gian
               </p>
             </div>
 
@@ -137,27 +138,27 @@ export default function ProgressPage() {
           className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur"
         >
           <p className="text-sm uppercase tracking-widest text-zinc-500">
-            AI Analysis
+            Phân tích AI
           </p>
 
           <h2 className="mt-4 text-4xl font-bold leading-tight">
-            Performance trending positively
+            Hiệu suất đang đi đúng hướng
           </h2>
 
           <div className="mt-6 grid gap-6 xl:grid-cols-3">
 
             {[
               {
-                title: "Strength Increase",
-                text: "Bench press strength improved 13.3% over the last 5 weeks.",
+                title: "Sức mạnh tăng",
+                text: "Bench Press cải thiện khoảng 13.3% trong 5 tuần gần nhất.",
               },
               {
-                title: "Recovery Trend",
-                text: "Recovery score stabilized despite increased training volume.",
+                title: "Xu hướng phục hồi",
+                text: "Điểm phục hồi ổn định dù volume tập tăng.",
               },
               {
-                title: "Fat Loss Progress",
-                text: "Weight trend indicates sustainable fat loss pace.",
+                title: "Tiến độ giảm mỡ",
+                text: "Xu hướng cân nặng cho thấy tốc độ giảm mỡ đang bền vững.",
               },
             ].map((item) => (
               <div

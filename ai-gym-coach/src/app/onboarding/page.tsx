@@ -6,42 +6,50 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-nav";
+import { TermTooltip } from "@/components/term-tooltip";
+import { generateAiPlan } from "@/lib/api";
 import { calculateFitnessPlan, defaultProfile } from "@/lib/fitness";
 import { cn } from "@/lib/utils";
 
-const steps = ["Body Metrics", "Goal", "Activity", "Plan Preview"];
+const steps = ["Chỉ số cơ thể", "Mục tiêu", "Vận động", "Xem plan"];
 
 const goals = [
   {
     value: "fat_loss",
-    title: "Fat Loss",
-    text: "Lower body fat while keeping muscle and gym performance.",
+    title: "Giảm mỡ",
+    text: "Giảm tỉ lệ mỡ nhưng vẫn giữ cơ và hiệu suất tập gym.",
   },
   {
     value: "muscle_gain",
-    title: "Muscle Gain",
-    text: "Build lean mass with a controlled calorie surplus.",
+    title: "Tăng cơ",
+    text: "Tăng cơ nạc với mức dư calo vừa phải, không bulk quá bừa.",
   },
   {
     value: "recomp",
-    title: "Recomposition",
-    text: "Improve muscle definition near maintenance calories.",
+    title: "Recomp",
+    text: "Cải thiện tỉ lệ cơ/mỡ quanh mức calo duy trì.",
   },
 ];
 
 const activities = [
-  { value: "sedentary", title: "Sedentary", text: "Desk work, little walking." },
-  { value: "light", title: "Light", text: "Some walking and light movement." },
-  { value: "moderate", title: "Moderate", text: "Active days and regular training." },
-  { value: "very", title: "Very Active", text: "High daily movement or physical work." },
+  { value: "sedentary", title: "Ít vận động", text: "Ngồi nhiều, đi bộ ít." },
+  { value: "light", title: "Vận động nhẹ", text: "Có đi lại và hoạt động nhẹ trong ngày." },
+  { value: "moderate", title: "Vận động vừa", text: "Ngày khá năng động và tập đều." },
+  { value: "very", title: "Rất năng động", text: "Di chuyển nhiều hoặc công việc thể lực cao." },
 ];
 
-const experienceLevels = ["beginner", "intermediate", "advanced"];
+const experienceLevels = [
+  ["beginner", "Mới tập"],
+  ["intermediate", "Trung cấp"],
+  ["advanced", "Nâng cao"],
+];
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState(defaultProfile);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState("");
   const plan = useMemo(() => calculateFitnessPlan(profile), [profile]);
 
   const updateProfile = (field, value) => {
@@ -60,9 +68,34 @@ export default function OnboardingPage() {
     }
   };
 
-  const savePlan = () => {
+  const savePlan = async () => {
+    if (!profile.age || !profile.height || !profile.weight || !profile.gymDays) {
+      setGenerationError("Vui lòng nhập tuổi, chiều cao, cân nặng và số buổi gym trước khi tạo plan.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationError("");
     window.localStorage.setItem("ai-gym-profile", JSON.stringify(profile));
     window.localStorage.setItem("ai-gym-plan", JSON.stringify(plan));
+
+    try {
+      const aiData = await generateAiPlan(profile);
+
+      if (aiData?.generatedPlan) {
+        window.localStorage.setItem(
+          "ai-gym-generated-plan",
+          JSON.stringify(aiData.generatedPlan)
+        );
+      }
+    } catch (error) {
+      setGenerationError(
+        "Chưa tạo được plan AI, app sẽ dùng plan công thức trước."
+      );
+      console.warn(error);
+    }
+
+    setIsGenerating(false);
     router.push("/dashboard");
   };
 
@@ -84,7 +117,7 @@ export default function OnboardingPage() {
             </div>
 
             <p className="text-sm text-zinc-500">
-              Step {step + 1} of {steps.length} · {steps[step]}
+              Bước {step + 1}/{steps.length} · {steps[step]}
             </p>
           </div>
 
@@ -97,25 +130,27 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Body Metrics</h1>
+                  <h1 className="text-4xl font-bold">Chỉ số cơ thể</h1>
                   <p className="mt-3 text-zinc-400">
-                    These numbers power your BMR, TDEE, calorie target and macro split.
+                    Các thông tin này dùng để tính <TermTooltip term="BMR" />,{" "}
+                    <TermTooltip term="TDEE" />, mục tiêu calo và{" "}
+                    <TermTooltip term="Macro">macro</TermTooltip>.
                   </p>
 
                   <div className="mt-10 grid gap-5 md:grid-cols-2">
-                    <NumberInput label="Age" value={profile.age} onChange={(value) => updateProfile("age", value)} />
+                    <NumberInput label="Tuổi" value={profile.age} onChange={(value) => updateProfile("age", value)} />
                     <SelectInput
-                      label="Sex"
+                      label="Giới tính"
                       value={profile.sex}
                       options={[
-                        ["male", "Male"],
-                        ["female", "Female"],
+                        ["male", "Nam"],
+                        ["female", "Nữ"],
                       ]}
                       onChange={(value) => updateProfile("sex", value)}
                     />
-                    <NumberInput label="Height (cm)" value={profile.height} onChange={(value) => updateProfile("height", value)} />
-                    <NumberInput label="Weight (kg)" value={profile.weight} onChange={(value) => updateProfile("weight", value)} />
-                    <NumberInput label="Body Fat % (optional)" value={profile.bodyFat} onChange={(value) => updateProfile("bodyFat", value)} />
+                    <NumberInput label="Chiều cao (cm)" value={profile.height} onChange={(value) => updateProfile("height", value)} />
+                    <NumberInput label="Cân nặng (kg)" value={profile.weight} onChange={(value) => updateProfile("weight", value)} />
+                    <NumberInput label="Body fat % (nếu biết)" value={profile.bodyFat} onChange={(value) => updateProfile("bodyFat", value)} />
                   </div>
                 </motion.div>
               )}
@@ -127,9 +162,9 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Choose Your Goal</h1>
+                  <h1 className="text-4xl font-bold">Chọn mục tiêu</h1>
                   <p className="mt-3 text-zinc-400">
-                    The app will adjust calories, macros and training emphasis from here.
+                    App sẽ điều chỉnh calo, macro và trọng tâm tập luyện theo lựa chọn này.
                   </p>
 
                   <div className="mt-10 grid gap-5 md:grid-cols-3">
@@ -153,9 +188,9 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Training Rhythm</h1>
+                  <h1 className="text-4xl font-bold">Nhịp vận động</h1>
                   <p className="mt-3 text-zinc-400">
-                    Tell us how often you lift and play sport so TDEE is not guessed blindly.
+                    Cho app biết tần suất gym/thể thao để <TermTooltip term="TDEE" /> không bị đoán quá chung chung.
                   </p>
 
                   <div className="mt-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
@@ -172,12 +207,12 @@ export default function OnboardingPage() {
                     </div>
 
                     <div className="grid content-start gap-5">
-                      <NumberInput label="Gym sessions / week" value={profile.gymDays} onChange={(value) => updateProfile("gymDays", value)} />
-                      <NumberInput label="Sport or cardio sessions / week" value={profile.sportDays} onChange={(value) => updateProfile("sportDays", value)} />
+                      <NumberInput label="Số buổi gym / tuần" value={profile.gymDays} onChange={(value) => updateProfile("gymDays", value)} />
+                      <NumberInput label="Số buổi thể thao/cardio / tuần" value={profile.sportDays} onChange={(value) => updateProfile("sportDays", value)} />
                       <SelectInput
-                        label="Training experience"
+                        label="Kinh nghiệm tập"
                         value={profile.experience}
-                        options={experienceLevels.map((level) => [level, capitalize(level)])}
+                        options={experienceLevels}
                         onChange={(value) => updateProfile("experience", value)}
                       />
                     </div>
@@ -192,35 +227,37 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -40 }}
                 >
-                  <h1 className="text-4xl font-bold">Your Starter Plan</h1>
+                  <h1 className="text-4xl font-bold">Plan khởi đầu của bạn</h1>
                   <p className="mt-3 text-zinc-400">{plan.focus}</p>
 
                   <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                    <PlanMetric title="BMR" value={`${plan.bmr} kcal`} />
-                    <PlanMetric title="TDEE" value={`${plan.tdee} kcal`} />
-                    <PlanMetric title="Target" value={`${plan.targetCalories} kcal`} />
-                    <PlanMetric title="BMI" value={plan.bmi} />
+                    <PlanMetric title={<TermTooltip term="BMR" />} value={`${plan.bmr} kcal`} />
+                    <PlanMetric title={<TermTooltip term="TDEE" />} value={`${plan.tdee} kcal`} />
+                    <PlanMetric title="Calo mục tiêu" value={`${plan.targetCalories} kcal`} />
+                    <PlanMetric title={<TermTooltip term="BMI" />} value={plan.bmi} />
                   </div>
 
                   <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
                     <div className="rounded-3xl border border-white/10 bg-black/30 p-6">
-                      <p className="text-sm text-zinc-500">Daily macros</p>
+                      <p className="text-sm text-zinc-500">
+                        <TermTooltip term="Macro">Macro mỗi ngày</TermTooltip>
+                      </p>
                       <div className="mt-5 grid grid-cols-3 gap-3">
                         <PlanMetric title="Protein" value={`${plan.protein}g`} compact />
-                        <PlanMetric title="Carbs" value={`${plan.carbs}g`} compact />
+                        <PlanMetric title="Carb" value={`${plan.carbs}g`} compact />
                         <PlanMetric title="Fat" value={`${plan.fat}g`} compact />
                       </div>
                     </div>
 
                     <div className="rounded-3xl border border-white/10 bg-black/30 p-6">
-                      <p className="text-sm text-zinc-500">Workout split</p>
+                      <p className="text-sm text-zinc-500">Lịch tập gợi ý</p>
                       <div className="mt-4 flex flex-wrap gap-3">
                         {plan.workoutSplit.map((day, index) => (
                           <span
                             key={day}
                             className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
                           >
-                            Day {index + 1}: {day}
+                            Buổi {index + 1}: {day}
                           </span>
                         ))}
                       </div>
@@ -236,7 +273,7 @@ export default function OnboardingPage() {
                   href="/"
                   className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 transition hover:bg-white/10"
                 >
-                  Back Home
+                  Về trang chủ
                 </Link>
               ) : (
                 <button
@@ -244,7 +281,7 @@ export default function OnboardingPage() {
                   onClick={prevStep}
                   className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 transition hover:bg-white/10"
                 >
-                  Back
+                  Quay lại
                 </button>
               )}
 
@@ -252,9 +289,10 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={savePlan}
+                  disabled={isGenerating}
                   className="rounded-2xl bg-white px-8 py-3 font-medium text-black transition hover:scale-105"
                 >
-                  Generate AI Plan
+                  {isGenerating ? "Đang tạo..." : "Tạo plan"}
                 </button>
               ) : (
                 <button
@@ -262,10 +300,13 @@ export default function OnboardingPage() {
                   onClick={nextStep}
                   className="rounded-2xl bg-white px-8 py-3 font-medium text-black transition hover:scale-105"
                 >
-                  Continue
+                  Tiếp tục
                 </button>
               )}
             </div>
+            {generationError && (
+              <p className="mt-4 text-sm text-zinc-500">{generationError}</p>
+            )}
           </div>
         </div>
       </div>
@@ -333,8 +374,4 @@ function PlanMetric({ title, value, compact = false }) {
       <h2 className={cn("mt-2 font-bold", compact ? "text-2xl" : "text-3xl")}>{value}</h2>
     </div>
   );
-}
-
-function capitalize(value) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }

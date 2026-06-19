@@ -4,22 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
-  BarChart3,
+  LogOut,
   Dumbbell,
   Home,
+  Info,
   LayoutDashboard,
   Sparkles,
 } from "lucide-react";
 
+import { AuthGuard } from "@/components/auth-guard";
 import { cn } from "@/lib/utils";
+import { clearAuthSession, getAuthUser } from "@/lib/auth";
 
 const primaryNavItems = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Onboarding", href: "/onboarding", icon: Sparkles },
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Workout", href: "/workout", icon: Dumbbell },
-  { label: "Nutrition", href: "/nutrition", icon: Activity },
-  { label: "Progress", href: "/progress", icon: BarChart3 },
+  { label: "Trang chủ", href: "/", icon: Home },
+  { label: "Nhập chỉ số", href: "/onboarding", icon: Sparkles },
+  { label: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Tập luyện", href: "/workout", icon: Dumbbell },
+  { label: "Dinh dưỡng", href: "/nutrition", icon: Activity },
+  { label: "Bài tập", href: "/exercises", icon: Dumbbell },
+  { label: "Thuật ngữ", href: "/glossary", icon: Info },
 ];
 
 const secondaryItems = [
@@ -54,7 +58,7 @@ function AppSidebar() {
     <aside className="hidden min-h-screen w-72 border-r border-white/10 bg-white/[0.02] p-6 lg:block">
       <Link href="/" className="mb-10 block">
         <p className="text-2xl font-bold">AI Gym Coach</p>
-        <p className="mt-1 text-sm text-zinc-500">Adaptive AI Training</p>
+        <p className="mt-1 text-sm text-zinc-500">Huấn luyện cá nhân hóa</p>
       </Link>
 
       <nav className="space-y-3" aria-label="Primary navigation">
@@ -65,7 +69,7 @@ function AppSidebar() {
 
       <div className="mt-10 border-t border-white/10 pt-6">
         <p className="mb-3 px-4 text-xs font-medium uppercase tracking-widest text-zinc-600">
-          Coming soon
+          Sắp có
         </p>
         <div className="space-y-3">
           {secondaryItems.map((item) => {
@@ -100,7 +104,7 @@ function MobileNav() {
           href="/workout"
           className="rounded-full bg-white px-4 py-2 text-sm font-medium text-black"
         >
-          Train
+          Tập ngay
         </Link>
       </div>
 
@@ -117,16 +121,36 @@ function MobileNav() {
 }
 
 function AppShell({ children }) {
+  const user = getAuthUser();
+
+  const handleLogout = () => {
+    clearAuthSession();
+    window.location.href = "/";
+  };
+
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="flex min-h-screen">
-        <AppSidebar />
-        <div className="min-w-0 flex-1">
-          <MobileNav />
-          {children}
+    <AuthGuard>
+      <main className="min-h-screen bg-black text-white">
+        <div className="flex min-h-screen">
+          <AppSidebar />
+          <div className="min-w-0 flex-1">
+            <MobileNav />
+            <div className="hidden border-b border-white/10 px-6 py-3 text-sm text-zinc-500 lg:flex lg:items-center lg:justify-end lg:gap-4">
+              {user?.email && <span>{user.email}</span>}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-zinc-300 transition hover:bg-white/10"
+              >
+                <LogOut className="size-4" />
+                Đăng xuất
+              </button>
+            </div>
+            {children}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </AuthGuard>
   );
 }
 

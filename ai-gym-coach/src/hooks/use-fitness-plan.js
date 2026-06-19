@@ -15,11 +15,16 @@ function useFitnessPlan() {
     ready && typeof window !== "undefined"
       ? window.localStorage.getItem("ai-gym-profile")
       : null;
+  const savedGeneratedPlan =
+    ready && typeof window !== "undefined"
+      ? window.localStorage.getItem("ai-gym-generated-plan")
+      : null;
   const profile = savedProfile ? JSON.parse(savedProfile) : defaultProfile;
   const plan = calculateFitnessPlan(profile);
+  const generatedPlan = savedGeneratedPlan ? JSON.parse(savedGeneratedPlan) : null;
   const hasSavedPlan = Boolean(savedProfile);
 
-  return { profile, plan, hasSavedPlan };
+  return { profile, plan, generatedPlan, hasSavedPlan };
 }
 
 export { useFitnessPlan };

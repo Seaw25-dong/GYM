@@ -1,152 +1,170 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { useState } from "react";
+import { Clock, Dumbbell, PlayCircle } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-nav";
 import { useFitnessPlan } from "@/hooks/use-fitness-plan";
+import { fallbackWorkoutExercises } from "@/lib/exercise-library";
 
-const exerciseTemplates = {
-  push: [
-    { name: "Bench Press", target: "4 sets · 6-8 reps" },
-    { name: "Incline Dumbbell Press", target: "3 sets · 8-10 reps" },
-    { name: "Cable Fly", target: "3 sets · 12-15 reps" },
-  ],
-  full: [
-    { name: "Squat", target: "4 sets · 5-8 reps" },
-    { name: "Dumbbell Press", target: "3 sets · 8-10 reps" },
-    { name: "Cable Row", target: "3 sets · 10-12 reps" },
-  ],
-};
+const dayNames = ["Thu 2", "Thu 3", "Thu 4", "Thu 5", "Thu 6", "Thu 7", "CN"];
 
 export default function WorkoutPage() {
-  const { plan } = useFitnessPlan();
-  const [logs, setLogs] = useState<Record<string, { weight: string; reps: string }>>({});
-  const todayWorkout = plan.workoutSplit[0];
-  const exercises = todayWorkout.includes("Full") ? exerciseTemplates.full : exerciseTemplates.push;
-
-  const handleChange = (
-    exercise: string,
-    field: "weight" | "reps",
-    value: string
-  ) => {
-    setLogs((prev) => ({
-      ...prev,
-      [exercise]: {
-        ...prev[exercise],
-        [field]: value,
-      },
-    }));
-  };
+  const { profile, plan, generatedPlan } = useFitnessPlan();
+  const sessions = useMemo(
+    () => buildSessions({ profile, plan, generatedPlan }),
+    [profile, plan, generatedPlan]
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedSession = sessions[selectedIndex] || sessions[0] || createFallbackSession();
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl px-6 py-12">
-        <div className="mb-12 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto max-w-7xl px-6 py-12">
+        <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-widest text-zinc-500">Today</p>
-            <h1 className="mt-2 text-5xl font-bold tracking-tight">{todayWorkout}</h1>
-            <p className="mt-3 text-zinc-400">
-              Programmed for {plan.goalLabel.toLowerCase()} · {plan.targetCalories} kcal target
+            <p className="text-sm uppercase tracking-widest text-zinc-500">
+              Lich tap
+            </p>
+            <h1 className="mt-2 text-5xl font-bold tracking-tight">
+              {Math.max(1, Number(profile.gymDays) || 1)} buoi / tuan
+            </h1>
+            <p className="mt-4 max-w-3xl text-zinc-400">
+              Bam vao tung buoi de xem chi tiet bai tap, so sets, reps, thoi gian nghi va ghi chu ky thuat.
             </p>
           </div>
 
           <div className="w-fit rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
-            <p className="text-sm text-zinc-500">Estimated Duration</p>
-            <h3 className="mt-1 text-2xl font-bold">60 min</h3>
+            <p className="text-sm text-zinc-500">Nguon plan</p>
+            <h3 className="mt-1 text-2xl font-bold">
+              {generatedPlan ? "AI generated" : "Rule-based"}
+            </h3>
           </div>
         </div>
 
-        <div className="space-y-8">
-          {exercises.map((exercise, index) => (
-            <motion.div
-              key={exercise.name}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
-            >
-              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-3xl font-bold">{exercise.name}</h2>
-                  <p className="mt-2 text-zinc-500">{exercise.target}</p>
+        <div className="grid gap-8 xl:grid-cols-[0.85fr_1.15fr]">
+          <div className="grid gap-4">
+            {sessions.map((session, index) => (
+              <button
+                key={`${session.dayName}-${session.name}`}
+                type="button"
+                onClick={() => setSelectedIndex(index)}
+                className={`rounded-3xl border p-5 text-left transition ${
+                  selectedIndex === index
+                    ? "border-white bg-white text-black"
+                    : "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className={selectedIndex === index ? "text-zinc-600" : "text-zinc-500"}>
+                      {session.dayName}
+                    </p>
+                    <h2 className="mt-1 text-2xl font-bold">{session.name}</h2>
+                  </div>
+                  <span className="rounded-full border border-current/15 px-3 py-1 text-sm">
+                    {session.exercises.length} bai
+                  </span>
                 </div>
+              </button>
+            ))}
+          </div>
 
-                <Link
-                  href="/progress"
-                  className="w-fit rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-sm transition hover:bg-white/10"
-                >
-                  View History
-                </Link>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
-                <div>
-                  <label className="mb-2 block text-sm text-zinc-500">
-                    Weight (kg)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="80"
-                    value={logs[exercise.name]?.weight || ""}
-                    onChange={(event) => handleChange(exercise.name, "weight", event.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 outline-none transition focus:border-white/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm text-zinc-500">Reps</label>
-                  <input
-                    type="number"
-                    placeholder="8"
-                    value={logs[exercise.name]?.reps || ""}
-                    onChange={(event) => handleChange(exercise.name, "reps", event.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 outline-none transition focus:border-white/20"
-                  />
-                </div>
-
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    className="w-full rounded-2xl bg-white px-6 py-4 font-medium text-black transition hover:scale-[1.02]"
-                  >
-                    Complete Set
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-8 rounded-2xl border border-white/10 bg-black/30 p-5">
-                <p className="mb-4 text-sm text-zinc-500">Previous Performance</p>
-                <div className="flex flex-wrap gap-3">
-                  {["75kg x 8", "75kg x 8", "80kg x 6"].map((set) => (
-                    <div
-                      key={set}
-                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm"
-                    >
-                      {set}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-10 flex justify-end"
-        >
-          <Link
-            href="/progress"
-            className="rounded-2xl bg-white px-8 py-4 text-lg font-semibold text-black transition hover:scale-105"
+          <motion.section
+            key={selectedSession.name}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
           >
-            Finish Workout
-          </Link>
-        </motion.div>
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-widest text-zinc-500">
+                  {selectedSession.dayName}
+                </p>
+                <h2 className="mt-2 text-4xl font-bold">{selectedSession.name}</h2>
+                <p className="mt-3 text-zinc-400">{selectedSession.focus}</p>
+              </div>
+              <div className="flex gap-3 text-sm text-zinc-400">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2">
+                  <Clock className="size-4" />
+                  60-75 phut
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2">
+                  <Dumbbell className="size-4" />
+                  {selectedSession.exercises.length} bai
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {selectedSession.exercises.map((exercise, index) => (
+                <article
+                  key={`${exercise.name}-${index}`}
+                  className="grid gap-4 rounded-2xl border border-white/10 bg-black/30 p-5 md:grid-cols-[120px_1fr]"
+                >
+                  <div className="flex aspect-video items-center justify-center rounded-2xl bg-white/5 md:aspect-square">
+                    <PlayCircle className="size-8 text-zinc-500" />
+                  </div>
+                  <div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="text-2xl font-bold">{exercise.name}</h3>
+                        <p className="mt-1 text-sm text-zinc-500">
+                          {exercise.muscleGroup || "Nhom co chinh"}
+                        </p>
+                      </div>
+                      <span className="w-fit rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300">
+                        {exercise.sets} sets x {exercise.reps}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm text-zinc-500">
+                      Nghi {exercise.restSeconds || 90}s giua cac set
+                    </p>
+                    <p className="mt-3 leading-relaxed text-zinc-400">{exercise.note}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </motion.section>
+        </div>
       </div>
     </AppShell>
   );
+}
+
+function buildSessions({ profile, plan, generatedPlan }) {
+  const aiSessions = generatedPlan?.workoutPlan;
+
+  if (aiSessions?.length) {
+    return aiSessions.map((session, index) => ({
+      dayName: dayNames[index % dayNames.length],
+      name: session.name || `Buoi ${index + 1}`,
+      focus: session.focus || "Buoi tap AI generated.",
+      exercises: session.exercises?.length ? session.exercises : fallbackWorkoutExercises,
+    }));
+  }
+
+  const requestedDays = Number(profile.gymDays);
+  const trainingDays = Math.max(
+    1,
+    Number.isFinite(requestedDays) ? requestedDays : plan.workoutSplit.length || 1
+  );
+  const split = plan.workoutSplit.length ? plan.workoutSplit : ["Full Body Strength"];
+
+  return split.slice(0, trainingDays).map((name, index) => ({
+    dayName: dayNames[index % dayNames.length],
+    name,
+    focus: "Buoi tap nen tang theo muc tieu hien tai.",
+    exercises: fallbackWorkoutExercises,
+  }));
+}
+
+function createFallbackSession() {
+  return {
+    dayName: "Thu 2",
+    name: "Full Body Strength",
+    focus: "Buoi tap nen tang theo muc tieu hien tai.",
+    exercises: fallbackWorkoutExercises,
+  };
 }

@@ -29,6 +29,31 @@ const goalSettings = {
   },
 };
 
+const exerciseLibrary = {
+  Push: [
+    { name: "Bench Press", muscleGroup: "Ngực", sets: 4, reps: "6-8", restSeconds: 120, note: "Bài compound chính." },
+    { name: "Incline Dumbbell Press", muscleGroup: "Ngực trên", sets: 3, reps: "8-10", restSeconds: 90, note: "Kiểm soát biên độ." },
+    { name: "Cable Fly", muscleGroup: "Ngực", sets: 3, reps: "12-15", restSeconds: 60, note: "Siết ngực cuối động tác." },
+    { name: "Overhead Press", muscleGroup: "Vai", sets: 3, reps: "8-10", restSeconds: 90, note: "Gồng core, không ưỡn lưng." },
+    { name: "Lateral Raise", muscleGroup: "Vai giữa", sets: 3, reps: "12-15", restSeconds: 60, note: "Không vung người." },
+    { name: "Triceps Pushdown", muscleGroup: "Tay sau", sets: 3, reps: "12-15", restSeconds: 60, note: "Giữ khuỷu cố định." },
+  ],
+  Pull: [
+    { name: "Lat Pulldown", muscleGroup: "Lưng xô", sets: 4, reps: "8-10", restSeconds: 90, note: "Kéo bằng khuỷu tay." },
+    { name: "Seated Row", muscleGroup: "Lưng giữa", sets: 3, reps: "10-12", restSeconds: 90, note: "Siết bả vai." },
+    { name: "Romanian Deadlift", muscleGroup: "Gân kheo/lưng", sets: 3, reps: "8-10", restSeconds: 120, note: "Đẩy hông ra sau." },
+    { name: "Face Pull", muscleGroup: "Vai sau", sets: 3, reps: "12-15", restSeconds: 60, note: "Kéo về ngang mặt." },
+    { name: "Dumbbell Curl", muscleGroup: "Tay trước", sets: 3, reps: "10-12", restSeconds: 60, note: "Không đung đưa thân." },
+  ],
+  Legs: [
+    { name: "Squat", muscleGroup: "Đùi trước", sets: 4, reps: "5-8", restSeconds: 150, note: "Giữ core chặt." },
+    { name: "Leg Press", muscleGroup: "Đùi trước/mông", sets: 3, reps: "10-12", restSeconds: 90, note: "Không khóa gối." },
+    { name: "Romanian Deadlift", muscleGroup: "Gân kheo", sets: 3, reps: "8-10", restSeconds: 120, note: "Cảm nhận căng gân kheo." },
+    { name: "Walking Lunge", muscleGroup: "Mông/đùi", sets: 3, reps: "10 mỗi chân", restSeconds: 90, note: "Bước đều và kiểm soát." },
+    { name: "Calf Raise", muscleGroup: "Bắp chân", sets: 4, reps: "12-15", restSeconds: 60, note: "Dừng nhẹ ở đỉnh." },
+  ],
+};
+
 function toNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -38,7 +63,6 @@ function calculateBmr(profile) {
   const weight = toNumber(profile.weight);
   const height = toNumber(profile.height);
   const age = toNumber(profile.age);
-  if (!weight || !height || !age) return 0;
   const sexOffset = profile.sex === "female" ? -161 : 5;
 
   return Math.round(10 * weight + 6.25 * height - 5 * age + sexOffset);
@@ -55,23 +79,31 @@ function calculateFitnessPlan(profile) {
   const exerciseAdjustment = Math.round((gymDays * 90 + sportDays * 70) / 7);
   const tdee = Math.round(bmr * multiplier + exerciseAdjustment);
   const targetCalories = Math.max(1200, tdee + goal.calorieOffset);
-  const protein = weight ? Math.round(weight * goal.proteinPerKg) : 0;
-  const fat = weight ? Math.round(weight * goal.fatPerKg) : 0;
+  const protein = Math.round(weight * goal.proteinPerKg);
+  const fat = Math.round(weight * goal.fatPerKg);
   const carbs = Math.max(80, Math.round((targetCalories - protein * 4 - fat * 9) / 4));
-  const bmi = weight && height ? Math.round((weight / (height / 100) ** 2) * 10) / 10 : 0;
+  const bmi = Math.round((weight / (height / 100) ** 2) * 10) / 10;
+  const workoutSplit = getWorkoutSplit(profile);
 
   return {
     bmi,
     bmr,
     tdee,
+    exerciseAdjustment,
     targetCalories,
+    macros: { protein, carbs, fat },
     protein,
-    fat,
     carbs,
+    fat,
     goalLabel: goal.label,
     focus: goal.focus,
-    workoutSplit: getWorkoutSplit(profile),
-    mealPlan: getMealPlan(targetCalories, protein, profile.goal),
+    workoutSplit,
+    workouts: workoutSplit.map((name, index) => ({
+      day: index + 1,
+      name,
+      exercises: getExercisesForWorkout(name),
+    })),
+    mealPlan: getMealPlan(targetCalories, profile.goal),
   };
 }
 
@@ -94,7 +126,23 @@ function getWorkoutSplit(profile) {
   return ["Push", "Pull", "Legs", "Upper Volume", "Lower + Conditioning"];
 }
 
-function getMealPlan(calories, protein, goal) {
+function getExercisesForWorkout(workoutName) {
+  if (exerciseLibrary[workoutName]) return exerciseLibrary[workoutName];
+  if (workoutName.includes("Lower") || workoutName.includes("Legs")) return exerciseLibrary.Legs;
+  if (workoutName.includes("Pull")) return exerciseLibrary.Pull;
+  if (workoutName.includes("Full Body")) {
+    return [
+      exerciseLibrary.Legs[0],
+      exerciseLibrary.Push[0],
+      exerciseLibrary.Pull[0],
+      exerciseLibrary.Push[4],
+      exerciseLibrary.Pull[4],
+    ];
+  }
+  return exerciseLibrary.Push;
+}
+
+function getMealPlan(calories, goal) {
   const isFatLoss = goal === "fat_loss";
 
   return [
@@ -114,9 +162,6 @@ function getMealPlan(calories, protein, goal) {
             { name: "Chuối", grams: 120 },
             { name: "Bơ đậu phộng", grams: 20 },
           ],
-      meal: isFatLoss
-        ? "Sữa chua Hy Lạp, yến mạch, berries, whey"
-        : "Trứng, yến mạch, chuối, bơ đậu phộng",
     },
     {
       name: "Bữa trưa",
@@ -127,7 +172,6 @@ function getMealPlan(calories, protein, goal) {
         { name: "Rau xanh", grams: 200 },
         { name: "Dầu olive", grams: 10 },
       ],
-      meal: "Ức gà, cơm, rau xanh, dầu olive",
     },
     {
       name: "Bữa tối",
@@ -143,9 +187,6 @@ function getMealPlan(calories, protein, goal) {
             { name: "Pasta", grams: 220 },
             { name: "Rau xanh", grams: 180 },
           ],
-      meal: isFatLoss
-        ? "Cá trắng, khoai tây, salad"
-        : "Bò nạc, pasta, rau xanh",
     },
     {
       name: "Bữa phụ",
@@ -154,22 +195,8 @@ function getMealPlan(calories, protein, goal) {
         { name: "Whey hoặc sữa chua", grams: 180 },
         { name: "Trái cây", grams: 120 },
       ],
-      meal: `Bữa phụ khoảng ${Math.max(25, Math.round(protein * 0.18))}g protein`,
     },
   ];
 }
 
-const defaultProfile = {
-  age: "",
-  sex: "male",
-  height: "",
-  weight: "",
-  bodyFat: "",
-  activity: "light",
-  gymDays: "",
-  sportDays: "",
-  experience: "intermediate",
-  goal: "muscle_gain",
-};
-
-export { calculateFitnessPlan, defaultProfile, goalSettings };
+export { calculateFitnessPlan, goalSettings };

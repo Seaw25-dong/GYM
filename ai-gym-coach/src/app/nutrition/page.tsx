@@ -4,15 +4,23 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 
 import { AppShell } from "@/components/app-nav";
+import { TermTooltip } from "@/components/term-tooltip";
 import { useFitnessPlan } from "@/hooks/use-fitness-plan";
 
 export default function NutritionPage() {
-  const { plan } = useFitnessPlan();
-  const macroTotal = plan.protein * 4 + plan.carbs * 4 + plan.fat * 9;
+  const { plan, generatedPlan } = useFitnessPlan();
+  const targets = generatedPlan?.nutritionPlan?.dailyTargets || {
+    calories: plan.targetCalories,
+    protein: plan.protein,
+    carbs: plan.carbs,
+    fat: plan.fat,
+  };
+  const meals = generatedPlan?.nutritionPlan?.meals || plan.mealPlan;
+  const macroTotal = targets.protein * 4 + targets.carbs * 4 + targets.fat * 9;
   const macroBars = [
-    { label: "Protein", value: plan.protein * 4, text: `${plan.protein}g`, className: "bg-white" },
-    { label: "Carbs", value: plan.carbs * 4, text: `${plan.carbs}g`, className: "bg-zinc-500" },
-    { label: "Fat", value: plan.fat * 9, text: `${plan.fat}g`, className: "bg-zinc-700" },
+    { label: "Protein", value: targets.protein * 4, text: `${targets.protein}g`, className: "bg-white" },
+    { label: "Carb", value: targets.carbs * 4, text: `${targets.carbs}g`, className: "bg-zinc-500" },
+    { label: "Fat", value: targets.fat * 9, text: `${targets.fat}g`, className: "bg-zinc-700" },
   ];
 
   return (
@@ -21,14 +29,13 @@ export default function NutritionPage() {
         <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-widest text-zinc-500">
-              Nutrition
+              Dinh dưỡng
             </p>
             <h1 className="mt-2 text-5xl font-bold tracking-tight">
-              {plan.targetCalories} kcal Meal Plan
+              Thực đơn {targets.calories} kcal
             </h1>
             <p className="mt-4 max-w-2xl text-zinc-400">
-              A simple starting menu for {plan.goalLabel.toLowerCase()}.
-              Adjust food choices, but keep calories and protein close.
+              Mỗi bữa được tách theo gram từng thực phẩm để bạn dễ cân đo và thay thế.
             </p>
           </div>
 
@@ -36,7 +43,7 @@ export default function NutritionPage() {
             href="/workout"
             className="w-fit rounded-2xl bg-white px-6 py-3 font-medium text-black transition hover:scale-105"
           >
-            Go Train
+            Xem lịch tập
           </Link>
         </div>
 
@@ -46,7 +53,9 @@ export default function NutritionPage() {
             animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
           >
-            <p className="text-sm text-zinc-500">Macro Split</p>
+            <p className="text-sm text-zinc-500">
+              <TermTooltip term="Macro">Tỉ lệ macro</TermTooltip>
+            </p>
             <div className="mt-5 flex h-4 overflow-hidden rounded-full bg-black/40">
               {macroBars.map((macro) => (
                 <div
@@ -71,7 +80,7 @@ export default function NutritionPage() {
           </motion.div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            {plan.mealPlan.map((meal, index) => (
+            {meals.map((meal, index) => (
               <motion.div
                 key={meal.name}
                 initial={{ opacity: 0, y: 40 }}
@@ -85,7 +94,22 @@ export default function NutritionPage() {
                     {meal.calories} kcal
                   </span>
                 </div>
-                <p className="mt-5 leading-relaxed text-zinc-400">{meal.meal}</p>
+
+                <div className="mt-5 grid gap-3">
+                  {(meal.foods || []).map((food) => (
+                    <div
+                      key={`${meal.name}-${food.name}`}
+                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3"
+                    >
+                      <span className="text-zinc-300">{food.name}</span>
+                      <strong>{food.grams}g</strong>
+                    </div>
+                  ))}
+                </div>
+
+                {meal.note && (
+                  <p className="mt-4 text-sm leading-relaxed text-zinc-500">{meal.note}</p>
+                )}
               </motion.div>
             ))}
           </div>
@@ -98,12 +122,14 @@ export default function NutritionPage() {
           className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur"
         >
           <p className="text-sm uppercase tracking-widest text-zinc-500">
-            Coaching Note
+            Ghi chú coach
           </p>
-          <h2 className="mt-4 text-3xl font-bold">Track the trend, not one meal.</h2>
+          <h2 className="mt-4 text-3xl font-bold">
+            Theo dõi xu hướng, không phán xét một bữa.
+          </h2>
           <p className="mt-4 max-w-3xl text-zinc-400">
-            If body weight does not move after 14 days, adjust by 150-200 kcal.
-            Keep protein stable first, then change carbs or fats based on training energy.
+            {generatedPlan?.nutritionPlan?.swapRules?.join(" ") ||
+              "Nếu cân nặng không thay đổi sau 14 ngày, hãy điều chỉnh 150-200 kcal. Giữ protein ổn định trước, rồi thay đổi carb hoặc fat theo năng lượng khi tập."}
           </p>
         </motion.div>
       </div>

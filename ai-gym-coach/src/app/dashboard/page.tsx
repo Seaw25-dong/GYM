@@ -4,32 +4,47 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 
 import { AppShell } from "@/components/app-nav";
+import { TermTooltip } from "@/components/term-tooltip";
 import { useFitnessPlan } from "@/hooks/use-fitness-plan";
-
-const exerciseLibrary = {
-  Push: ["Bench Press", "Incline Dumbbell Press", "Cable Fly"],
-  Pull: ["Lat Pulldown", "Seated Row", "Dumbbell Curl"],
-  Legs: ["Squat", "Romanian Deadlift", "Leg Press"],
-  "Full Body Strength": ["Squat", "Bench Press", "Lat Pulldown"],
-  "Full Body Hypertrophy": ["Leg Press", "Dumbbell Press", "Cable Row"],
-  "Full Body + Conditioning": ["Deadlift", "Push-up", "Bike Intervals"],
-  "Full Body Pump": ["Goblet Squat", "Machine Press", "Cable Row"],
-  "Upper Strength": ["Bench Press", "Weighted Row", "Overhead Press"],
-  "Lower Strength": ["Squat", "Romanian Deadlift", "Calf Raise"],
-  "Upper Volume": ["Incline Press", "Pulldown", "Lateral Raise"],
-  "Lower Volume": ["Leg Press", "Leg Curl", "Walking Lunge"],
-  "Lower + Conditioning": ["Front Squat", "Hip Thrust", "Sled Push"],
-};
+import { fallbackWorkoutExercises } from "@/lib/exercise-library";
 
 export default function DashboardPage() {
-  const { profile, plan, hasSavedPlan } = useFitnessPlan();
-  const todayWorkout = plan.workoutSplit[0];
-  const workouts = exerciseLibrary[todayWorkout] || exerciseLibrary.Push;
+  const { profile, plan, generatedPlan, hasSavedPlan } = useFitnessPlan();
+  const todayWorkout = generatedPlan?.workoutPlan?.[0]?.name || plan.workoutSplit[0];
+  const workouts =
+    generatedPlan?.workoutPlan?.[0]?.exercises?.map((exercise) => ({
+      name: exercise.name,
+      target: `${exercise.sets} sets x ${exercise.reps}`,
+    })) ||
+    fallbackWorkoutExercises.map((exercise) => ({
+      name: exercise.name,
+      target: `${exercise.sets} sets x ${exercise.reps}`,
+    }));
   const metrics = [
-    { title: "Target Calories", value: `${plan.targetCalories}`, detail: `${plan.goalLabel} target` },
-    { title: "Protein", value: `${plan.protein}g`, detail: "Daily minimum" },
-    { title: "TDEE", value: `${plan.tdee}`, detail: "Estimated maintenance" },
-    { title: "Training", value: `${profile.gymDays}x`, detail: "Gym sessions / week" },
+    {
+      id: "target",
+      title: "Calo mục tiêu",
+      value: `${plan.targetCalories}`,
+      detail: `Mục tiêu ${plan.goalLabel.toLowerCase()}`,
+    },
+    {
+      id: "protein",
+      title: "Protein",
+      value: `${plan.protein}g`,
+      detail: "Tối thiểu mỗi ngày",
+    },
+    {
+      id: "tdee",
+      title: <TermTooltip term="TDEE" />,
+      value: `${plan.tdee}`,
+      detail: "Mức duy trì ước tính",
+    },
+    {
+      id: "training",
+      title: "Tập luyện",
+      value: `${profile.gymDays}x`,
+      detail: "Buổi gym / tuần",
+    },
   ];
 
   return (
@@ -38,12 +53,14 @@ export default function DashboardPage() {
         <div className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm uppercase tracking-widest text-zinc-500">
-              {hasSavedPlan ? "Personal plan" : "Demo plan"}
+              {generatedPlan ? "Plan AI cá nhân" : hasSavedPlan ? "Plan cá nhân" : "Plan mẫu"}
             </p>
             <h2 className="mt-2 text-4xl font-bold tracking-tight">
-              {plan.goalLabel} Dashboard
+              Tổng quan {generatedPlan?.summary?.goal || plan.goalLabel.toLowerCase()}
             </h2>
-            <p className="mt-2 max-w-2xl text-zinc-500">{plan.focus}</p>
+            <p className="mt-2 max-w-2xl text-zinc-500">
+              {generatedPlan?.summary?.strategy || plan.focus}
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -51,13 +68,13 @@ export default function DashboardPage() {
               href="/onboarding"
               className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium transition hover:bg-white/10"
             >
-              Edit Profile
+              Sửa chỉ số
             </Link>
             <Link
               href="/nutrition"
               className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:scale-105"
             >
-              View Meal Plan
+              Xem thực đơn
             </Link>
           </div>
         </div>
@@ -65,7 +82,7 @@ export default function DashboardPage() {
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {metrics.map((metric, index) => (
             <motion.div
-              key={metric.title}
+              key={metric.id}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -87,7 +104,7 @@ export default function DashboardPage() {
           >
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-2xl font-bold">Today&apos;s Workout</h3>
+                <h3 className="text-2xl font-bold">Buổi tập hôm nay</h3>
                 <p className="mt-1 text-zinc-500">{todayWorkout}</p>
               </div>
 
@@ -95,28 +112,26 @@ export default function DashboardPage() {
                 href="/workout"
                 className="w-fit rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:scale-105"
               >
-                Start Workout
+                Bắt đầu tập
               </Link>
             </div>
 
             <div className="space-y-4">
-              {workouts.map((exercise, index) => (
+              {workouts.map((exercise) => (
                 <div
-                  key={exercise}
+                  key={exercise.name}
                   className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 p-5"
                 >
                   <div>
-                    <h4 className="text-lg font-semibold">{exercise}</h4>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      {index === 0 ? "4 sets · 6-8 reps" : "3 sets · 10-12 reps"}
-                    </p>
+                    <h4 className="text-lg font-semibold">{exercise.name}</h4>
+                    <p className="mt-1 text-sm text-zinc-500">{exercise.target}</p>
                   </div>
 
                   <Link
                     href="/workout"
                     className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
                   >
-                    Log
+                    Ghi log
                   </Link>
                 </div>
               ))}
@@ -129,24 +144,25 @@ export default function DashboardPage() {
             transition={{ delay: 0.5 }}
             className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
           >
-            <p className="text-sm text-zinc-500">AI Nutrition Target</p>
+            <p className="text-sm text-zinc-500">Mục tiêu dinh dưỡng</p>
             <h3 className="mt-4 text-3xl font-bold leading-tight">
-              {plan.targetCalories} kcal with {plan.protein}g protein
+              {generatedPlan?.summary?.calorieTarget ||
+                `${plan.targetCalories} kcal với ${plan.protein}g protein`}
             </h3>
             <p className="mt-4 text-zinc-400">
-              Start by hitting protein and calories consistently. Carbs and fats can flex
-              around training days as long as weekly adherence stays high.
+              {generatedPlan?.summary?.macroTarget ||
+                "Ưu tiên giữ đều protein và tổng calo trước. Carb và fat có thể linh hoạt theo ngày tập."}
             </p>
 
             <div className="mt-8 grid grid-cols-3 gap-3">
               {[
-                ["Carbs", `${plan.carbs}g`],
-                ["Fat", `${plan.fat}g`],
-                ["BMI", plan.bmi],
-              ].map(([title, value]) => (
-                <div key={title} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-sm text-zinc-500">{title}</p>
-                  <p className="mt-2 text-2xl font-bold">{value}</p>
+                { id: "carb", title: "Carb", value: `${plan.carbs}g` },
+                { id: "fat", title: "Fat", value: `${plan.fat}g` },
+                { id: "bmi", title: <TermTooltip term="BMI" />, value: plan.bmi },
+              ].map((item) => (
+                <div key={item.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-sm text-zinc-500">{item.title}</p>
+                  <p className="mt-2 text-2xl font-bold">{item.value}</p>
                 </div>
               ))}
             </div>
