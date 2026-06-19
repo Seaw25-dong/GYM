@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -31,7 +32,37 @@ export default function HomePage() {
         }}
       />
 
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-6 py-32">
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+        <Link href="/" className="text-lg font-bold">
+          AI Gym Coach
+        </Link>
+
+        <nav className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur md:flex">
+          {[
+            ["Dashboard", "/dashboard"],
+            ["Workout", "/workout"],
+            ["Nutrition", "/nutrition"],
+            ["Progress", "/progress"],
+          ].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="rounded-full px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10 hover:text-white"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <Link
+          href="/onboarding"
+          className="rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition hover:scale-105"
+        >
+          Get Started
+        </Link>
+      </header>
+
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-6 py-24">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -71,13 +102,19 @@ export default function HomePage() {
           transition={{ delay: 0.7, duration: 0.7 }}
           className="mt-10 flex gap-4"
         >
-          <button className="rounded-2xl bg-white px-7 py-3 font-medium text-black transition hover:scale-105">
+          <Link
+            href="/onboarding"
+            className="rounded-2xl bg-white px-7 py-3 font-medium text-black transition hover:scale-105"
+          >
             Start Training
-          </button>
+          </Link>
 
-          <button className="rounded-2xl border border-white/10 bg-white/5 px-7 py-3 font-medium backdrop-blur transition hover:bg-white/10">
+          <Link
+            href="/dashboard"
+            className="rounded-2xl border border-white/10 bg-white/5 px-7 py-3 font-medium backdrop-blur transition hover:bg-white/10"
+          >
             View Demo
-          </button>
+          </Link>
         </motion.div>
 
         {/* Mockup Dashboard */}

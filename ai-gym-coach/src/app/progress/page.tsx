@@ -1,62 +1,67 @@
 "use client";
 
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
+import Link from "next/link";
 
-import {
-  LineChart,
-  Line,
-  XAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  AreaChart,
-  Area,
-} from "recharts";
+import { AppShell } from "@/components/app-nav";
+import { useFitnessPlan } from "@/hooks/use-fitness-plan";
 
-const strengthData = [
-  { week: "W1", bench: 75 },
-  { week: "W2", bench: 77.5 },
-  { week: "W3", bench: 80 },
-  { week: "W4", bench: 82.5 },
-  { week: "W5", bench: 85 },
-];
+const StrengthChart = dynamic(
+  () => import("@/components/progress-charts").then((mod) => mod.StrengthChart),
+  {
+    ssr: false,
+    loading: () => <div className="h-full rounded-2xl bg-black/20" />,
+  }
+);
 
-const weightData = [
-  { week: "W1", weight: 78 },
-  { week: "W2", weight: 77.6 },
-  { week: "W3", weight: 77.2 },
-  { week: "W4", weight: 76.8 },
-  { week: "W5", weight: 76.4 },
-];
+const WeightChart = dynamic(
+  () => import("@/components/progress-charts").then((mod) => mod.WeightChart),
+  {
+    ssr: false,
+    loading: () => <div className="h-full rounded-2xl bg-black/20" />,
+  }
+);
 
 export default function ProgressPage() {
+  const { plan } = useFitnessPlan();
+
   return (
-    <main className="min-h-screen bg-black text-white">
+    <AppShell>
       <div className="mx-auto max-w-7xl px-6 py-12">
 
         {/* Header */}
-        <div className="mb-12">
-          <p className="text-sm uppercase tracking-widest text-zinc-500">
-            Analytics
-          </p>
+        <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-widest text-zinc-500">
+              Analytics
+            </p>
 
-          <h1 className="mt-2 text-5xl font-bold tracking-tight">
-            Progress Tracking
-          </h1>
+            <h1 className="mt-2 text-5xl font-bold tracking-tight">
+              Progress Tracking
+            </h1>
 
-          <p className="mt-4 max-w-2xl text-zinc-400">
-            Analyze strength progression, body composition,
-            recovery and performance trends over time.
-          </p>
+            <p className="mt-4 max-w-2xl text-zinc-400">
+              Track your {plan.goalLabel.toLowerCase()} trend against a {plan.targetCalories}
+              kcal target and {plan.protein}g protein baseline.
+            </p>
+          </div>
+
+          <Link
+            href="/workout"
+            className="w-fit rounded-2xl bg-white px-6 py-3 font-medium text-black transition hover:scale-105"
+          >
+            Log Next Workout
+          </Link>
         </div>
 
         {/* Stats */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[
-            ["Current Weight", "76.4kg"],
+            ["Target Calories", `${plan.targetCalories}`],
             ["Bench PR", "85kg"],
-            ["Body Fat", "15.8%"],
-            ["Recovery Avg", "81%"],
+            ["TDEE", `${plan.tdee}`],
+            ["Protein", `${plan.protein}g`],
           ].map(([title, value], index) => (
             <motion.div
               key={title}
@@ -96,29 +101,8 @@ export default function ProgressPage() {
               </p>
             </div>
 
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={strengthData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#27272a"
-                  />
-
-                  <XAxis
-                    dataKey="week"
-                    stroke="#71717a"
-                  />
-
-                  <Tooltip />
-
-                  <Line
-                    type="monotone"
-                    dataKey="bench"
-                    stroke="#ffffff"
-                    strokeWidth={3}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="h-[320px] min-w-0">
+              <StrengthChart />
             </div>
           </motion.div>
 
@@ -139,29 +123,8 @@ export default function ProgressPage() {
               </p>
             </div>
 
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weightData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#27272a"
-                  />
-
-                  <XAxis
-                    dataKey="week"
-                    stroke="#71717a"
-                  />
-
-                  <Tooltip />
-
-                  <Area
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="#ffffff"
-                    fill="#27272a"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="h-[320px] min-w-0">
+              <WeightChart />
             </div>
           </motion.div>
         </div>
@@ -213,6 +176,6 @@ export default function ProgressPage() {
           </div>
         </motion.div>
       </div>
-    </main>
+    </AppShell>
   );
 }
