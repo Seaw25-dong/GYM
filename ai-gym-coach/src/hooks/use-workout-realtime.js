@@ -6,7 +6,10 @@ import { io } from "socket.io-client";
 import { getWorkoutLogs, updateWorkoutLog } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+const apiBaseUrl = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:4000" : "")
+).replace(/\/+$/, "");
 
 function useWorkoutRealtime() {
   const [logs, setLogs] = useState([]);
@@ -27,6 +30,12 @@ function useWorkoutRealtime() {
         if (active) setLogs(Array.isArray(data) ? data : []);
       })
       .catch(() => {});
+
+    if (!apiBaseUrl) {
+      return () => {
+        active = false;
+      };
+    }
 
     const socket = io(apiBaseUrl, {
       auth: { token: getAuthToken() },

@@ -16,14 +16,15 @@ import trackingRoutes from "./routes/tracking.routes.js";
 const app = express();
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
   .split(",")
-  .map((origin) => origin.trim());
+  .map(normalizeOrigin)
+  .filter(Boolean);
 
 app.use(helmet());
 app.use(
   cors({
     credentials: true,
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
         callback(null, true);
         return;
       }
@@ -45,5 +46,16 @@ app.use("/api/tracking", trackingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
+
+function normalizeOrigin(value) {
+  const origin = String(value || "").trim();
+  if (!origin) return "";
+
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+}
 
 export default app;

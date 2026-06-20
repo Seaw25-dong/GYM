@@ -1,6 +1,9 @@
 import { clearAuthSession, getAuthToken, saveAuthSession } from "@/lib/auth";
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+const apiBaseUrl = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:4000" : "")
+).replace(/\/+$/, "");
 
 async function generateAiPlan(profile) {
   return request("/api/ai/plans/generate", {
@@ -95,6 +98,10 @@ async function getNutritionLog(date) { return request(`/api/tracking/nutrition/$
 async function saveNutritionLog(date, meals) { return request(`/api/tracking/nutrition/${date}`, { method: "PUT", auth: true, body: JSON.stringify({ meals }) }); }
 
 async function request(path, options = {}, retry = true) {
+  if (!apiBaseUrl) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL chưa được cấu hình cho môi trường deploy");
+  }
+
   const { auth = false, ...fetchOptions } = options;
   const token = auth ? getAuthToken() : null;
   const response = await fetch(`${apiBaseUrl}${path}`, {

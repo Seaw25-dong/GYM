@@ -16,7 +16,8 @@ async function startServer() {
   const httpServer = createServer(app);
   const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
     .split(",")
-    .map((origin) => origin.trim());
+    .map(normalizeOrigin)
+    .filter(Boolean);
   const io = new Server(httpServer, {
     cors: { origin: allowedOrigins, credentials: true },
   });
@@ -46,3 +47,14 @@ startServer().catch((error) => {
   console.error("Failed to start server", error);
   process.exit(1);
 });
+
+function normalizeOrigin(value) {
+  const origin = String(value || "").trim();
+  if (!origin) return "";
+
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+}
