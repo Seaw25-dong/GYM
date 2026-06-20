@@ -53,14 +53,23 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white">
-      <div className="absolute left-1/2 top-[-200px] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-zinc-800 blur-3xl" />
-      <video autoPlay muted loop playsInline className="absolute inset-0 h-screen w-full object-cover scale-105">
+    <main className="relative min-h-dvh overflow-hidden bg-black text-white">
+      <div className="pointer-events-none absolute left-1/2 top-[-200px] h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-zinc-800 blur-3xl" />
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        disablePictureInPicture
+        aria-hidden="true"
+        tabIndex={-1}
+        className="pointer-events-none absolute inset-0 h-dvh w-full select-none object-cover scale-105"
+      >
         <source src="/video/15079739_1920_1080_30fps.mp4" type="video/mp4" />
       </video>
-      <div className="absolute inset-x-0 top-0 h-screen bg-black/70" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-dvh bg-black/70" />
       <div
-        className="absolute inset-0 opacity-[0.06]"
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{
           backgroundImage:
             "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
@@ -131,7 +140,7 @@ export default function HomePage() {
         )}
       </header>
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl flex-col items-center px-4 py-12 sm:px-6 sm:py-20">
+      <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-80px)] max-w-7xl flex-col items-center px-4 py-12 sm:px-6 sm:py-20">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -290,7 +299,7 @@ export default function HomePage() {
       </section>
 
       <section className="relative z-10 overflow-hidden border-t border-white/10 bg-zinc-950 px-4 py-20 text-center sm:px-6 sm:py-28">
-        <div className="absolute left-1/2 top-1/2 size-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.06] blur-3xl" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 size-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.06] blur-3xl" />
         <div className="relative mx-auto max-w-4xl">
           <p className="text-sm uppercase tracking-[0.25em] text-zinc-500">Bắt đầu từ hôm nay</p>
           <h2 className="mt-5 text-4xl font-bold leading-tight sm:text-6xl">

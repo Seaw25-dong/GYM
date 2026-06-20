@@ -1,12 +1,20 @@
 export function AuthPageShell({ children, title, description }) {
   return (
-    <main className="grid min-h-screen bg-black text-white lg:grid-cols-2">
-      <section className="relative z-10 flex items-center justify-center px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
+    <main className="isolate grid min-h-dvh bg-black text-white lg:grid-cols-2">
+      <section className="relative z-20 flex min-h-dvh items-start justify-center overflow-y-auto px-4 py-4 sm:items-center sm:px-6 sm:py-10 lg:px-10">
         {children}
       </section>
 
-      <aside className="relative hidden min-h-screen overflow-hidden border-l border-white/10 lg:block">
-        <video autoPlay muted loop playsInline className="absolute inset-0 h-full w-full scale-105 object-cover">
+      <aside className="pointer-events-none relative hidden min-h-dvh overflow-hidden border-l border-white/10 lg:block" aria-hidden="true">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          disablePictureInPicture
+          tabIndex={-1}
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover scale-105"
+        >
           <source src="/video/15079739_1920_1080_30fps.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/40" />

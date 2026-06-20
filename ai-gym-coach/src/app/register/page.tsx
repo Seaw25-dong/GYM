@@ -71,7 +71,7 @@ export default function RegisterPage() {
       <ToastMessage message={toast} type={toastType} />
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950/80 p-5 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-8"
+        className="relative z-30 my-auto w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950/80 p-5 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-8"
       >
         <Link
           href="/"
