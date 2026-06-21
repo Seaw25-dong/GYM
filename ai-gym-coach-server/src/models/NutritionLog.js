@@ -5,6 +5,8 @@ const foodSchema = new mongoose.Schema({
   grams: { type: Number, min: 0, required: true },
   calories: { type: Number, min: 0, default: 0 },
   protein: { type: Number, min: 0, default: 0 },
+  carbs: { type: Number, min: 0, default: 0 },
+  fat: { type: Number, min: 0, default: 0 },
 }, { _id: false });
 const mealSchema = new mongoose.Schema({
   mealIndex: { type: Number, required: true, min: 0 },

@@ -1,5 +1,19 @@
 const foodMarketUpdatedAt = "21/06/2026";
 
+const macroByFood = {
+  "Ức gà không da": [0, 2.6], "Trứng gà": [0.7, 9.5], "Thịt bò nạc": [0, 9],
+  "Thịt thăn heo": [0, 6], "Cá hồi": [0, 13], "Cá basa phi lê": [0, 3],
+  "Cá ngừ": [0, 4], "Tôm": [0.2, 0.3], "Đậu hũ": [1.9, 4.8], "Đậu gà": [27.4, 2.6],
+  "Sữa chua Hy Lạp": [3.6, 0.4], "Sữa tươi không đường": [4.8, 3.3], "Gạo trắng": [28.2, 0.3],
+  "Yến mạch": [66.3, 6.9], "Khoai lang": [20.1, 0.1], "Khoai tây": [17.5, 0.1],
+  "Chuối": [22.8, 0.3], "Bơ": [8.5, 14.7], "Bông cải xanh": [6.6, 0.4], "Rau bina": [3.6, 0.4],
+  "Bơ đậu phộng": [20, 50], "Hạnh nhân": [21.6, 49.9], "Cá thu": [0, 14], "Mực": [3.1, 1.4],
+  "Lòng trắng trứng": [0.7, 0.2], "Tempeh": [7.6, 11], "Đậu đen": [23.7, 0.5],
+  "Mì pasta": [30.9, 0.9], "Bún tươi": [25.7, 0.2], "Bánh mì nguyên cám": [41, 3.4],
+  "Ngô ngọt": [21, 1.5], "Cam": [11.8, 0.1], "Táo": [13.8, 0.2], "Dâu tây": [7.7, 0.3],
+  "Cà rốt": [9.6, 0.2], "Cà chua": [3.9, 0.2], "Dầu olive": [0, 100], "Hạt chia": [42.1, 30.7],
+};
+
 const foodMarket = [
   ["Ức gà không da", "Đạm động vật", 23, 120, 90000, 135000, "kg", "sống"],
   ["Trứng gà", "Đạm động vật", 12.6, 143, 70000, 105000, "kg", "nguyên quả"],
@@ -23,6 +37,22 @@ const foodMarket = [
   ["Rau bina", "Rau củ", 2.9, 23, 35000, 90000, "kg", "sống"],
   ["Bơ đậu phộng", "Chất béo", 25, 588, 140000, 300000, "kg", "thành phẩm"],
   ["Hạnh nhân", "Chất béo", 21, 579, 250000, 500000, "kg", "hạt khô"],
+  ["Cá thu", "Đạm động vật", 19, 205, 120000, 240000, "kg", "sống"],
+  ["Mực", "Đạm động vật", 16, 92, 160000, 300000, "kg", "sống"],
+  ["Lòng trắng trứng", "Đạm động vật", 11, 52, 85000, 140000, "kg", "thành phẩm"],
+  ["Tempeh", "Đạm thực vật", 19, 193, 90000, 180000, "kg", "thành phẩm"],
+  ["Đậu đen", "Đạm thực vật", 8.9, 132, 45000, 90000, "kg", "đã nấu"],
+  ["Mì pasta", "Tinh bột", 5.8, 158, 45000, 110000, "kg", "đã nấu"],
+  ["Bún tươi", "Tinh bột", 1.7, 109, 18000, 35000, "kg", "thành phẩm"],
+  ["Bánh mì nguyên cám", "Tinh bột", 12, 247, 70000, 150000, "kg", "thành phẩm"],
+  ["Ngô ngọt", "Tinh bột", 3.4, 96, 25000, 55000, "kg", "đã nấu"],
+  ["Cam", "Trái cây", 0.9, 47, 30000, 70000, "kg", "phần ăn được"],
+  ["Táo", "Trái cây", 0.3, 52, 50000, 120000, "kg", "phần ăn được"],
+  ["Dâu tây", "Trái cây", 0.7, 32, 120000, 280000, "kg", "phần ăn được"],
+  ["Cà rốt", "Rau củ", 0.9, 41, 20000, 45000, "kg", "sống"],
+  ["Cà chua", "Rau củ", 0.9, 18, 25000, 55000, "kg", "sống"],
+  ["Dầu olive", "Chất béo", 0, 884, 180000, 400000, "lít", "thành phẩm"],
+  ["Hạt chia", "Chất béo", 16.5, 486, 180000, 380000, "kg", "hạt khô"],
 ].map(([name, group, protein, calories, priceMin, priceMax, unit, state]) => ({
   name: String(name),
   group: String(group),
@@ -32,6 +62,8 @@ const foodMarket = [
   priceMax: Number(priceMax),
   unit: String(unit),
   state: String(state),
+  carbs: macroByFood[String(name)]?.[0] ?? 0,
+  fat: macroByFood[String(name)]?.[1] ?? 0,
 }));
 
 export { foodMarket, foodMarketUpdatedAt };

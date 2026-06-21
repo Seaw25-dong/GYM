@@ -2,6 +2,7 @@
 
 import { ArrowDownUp, Search, ShoppingBasket, Utensils } from "lucide-react";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/app-nav";
 import { foodMarket, foodMarketUpdatedAt } from "@/lib/food-market";
 
@@ -35,8 +36,9 @@ export default function FoodsPage() {
     <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{foods.map((food) => <article key={food.name} className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
       <div className="flex items-start justify-between gap-4"><span className="grid size-10 place-items-center rounded-xl bg-white text-black"><Utensils className="size-5" /></span><span className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-500">{food.group}</span></div>
       <h2 className="mt-5 text-2xl font-bold">{food.name}</h2><p className="mt-1 text-sm text-zinc-600">Trạng thái: {food.state}</p>
-      <div className="mt-5 grid grid-cols-2 gap-3"><Metric label="Protein / 100g" value={`${food.protein}g`} /><Metric label="Calories / 100g" value={food.calories} /></div>
+      <div className="mt-5 grid grid-cols-2 gap-3"><Metric label="Protein / 100g" value={`${food.protein}g`} /><Metric label="Calories / 100g" value={food.calories} /><Metric label="Carb / 100g" value={`${food.carbs}g`} /><Metric label="Fat / 100g" value={`${food.fat}g`} /></div>
       <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 p-4"><ShoppingBasket className="size-5 text-zinc-500" /><div><p className="text-xs text-zinc-600">Giá tham khảo / {food.unit}</p><strong>{formatter.format(food.priceMin)}–{formatter.format(food.priceMax)}đ</strong></div></div>
+      <Link href={`/nutrition?food=${encodeURIComponent(food.name)}`} className="mt-3 flex w-full items-center justify-center rounded-xl border border-white/10 px-4 py-3 text-sm font-medium transition hover:bg-white/10">Thêm vào thực đơn</Link>
     </article>)}</div>
   </div></AppShell>;
 }

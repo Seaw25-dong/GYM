@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Plus, Search, Trash2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-nav";
 import { EmptyPlanState, PlanLoadingState } from "@/components/empty-plan-state";
@@ -10,6 +11,7 @@ import { TermTooltip } from "@/components/term-tooltip";
 import { useFitnessPlan } from "@/hooks/use-fitness-plan";
 import { getNutritionLog, saveNutritionLog } from "@/lib/api";
 import { toDateKey } from "@/lib/workout-schedule";
+import { foodMarket } from "@/lib/food-market";
 
 export default function NutritionPage() {
   const { plan, generatedPlan, hasSavedPlan, isLoading } = useFitnessPlan();
@@ -66,7 +68,7 @@ export default function NutritionPage() {
           </Link>
         </div>
 
-        <NutritionTracker plannedMeals={meals} />
+        <NutritionTracker plannedMeals={meals} targets={targets} />
 
         <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <motion.div
@@ -158,18 +160,60 @@ export default function NutritionPage() {
   );
 }
 
-function NutritionTracker({ plannedMeals }) {
+function NutritionTracker({ plannedMeals, targets }) {
   const date = toDateKey(new Date());
-  const [meals, setMeals] = useState(() => plannedMeals.map((meal, mealIndex) => ({ mealIndex, name: meal.name, completed: false, foods: (meal.foods || []).map((food) => ({ ...food, calories: 0, protein: 0 })) })));
+  const [meals, setMeals] = useState(() => plannedMeals.map((meal, mealIndex) => ({ mealIndex, name: meal.name, completed: false, foods: meal.foods || [] })));
   const [query, setQuery] = useState("");
+  const [selectedMeal, setSelectedMeal] = useState(0);
   const [saving, setSaving] = useState(false);
   useEffect(() => { getNutritionLog(date).then((log) => { if (log.meals?.length) setMeals(log.meals); }).catch(() => {}); }, [date]);
+  useEffect(() => {
+    const foodName = new URLSearchParams(window.location.search).get("food");
+    const frame = window.requestAnimationFrame(() => {
+      if (foodName) setQuery(foodName);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const updateFood = (mealIndex, foodIndex, grams) => setMeals((current) => current.map((meal, i) => i === mealIndex ? { ...meal, foods: meal.foods.map((food, j) => j === foodIndex ? { ...food, grams: Number(grams) } : food) } : meal));
-  const save = async () => { setSaving(true); try { const log = await saveNutritionLog(date, meals); setMeals(log.meals); } finally { setSaving(false); } };
-  const alternatives = ["Cơm", "Khoai lang", "Yến mạch", "Ức gà", "Cá", "Bò nạc", "Trứng", "Sữa chua Hy Lạp", "Đậu phụ", "Rau xanh"].filter((name) => name.toLowerCase().includes(query.toLowerCase()));
+  const removeFood = (mealIndex, foodIndex) => setMeals((current) => current.map((meal, i) => i === mealIndex ? { ...meal, foods: meal.foods.filter((_, j) => j !== foodIndex) } : meal));
+  const mealsWithMacros = meals.map((meal) => ({ ...meal, foods: meal.foods.map(enrichFood) }));
+  const daily = sumMacros(mealsWithMacros.flatMap((meal) => meal.foods));
+  const save = async () => { setSaving(true); try { const log = await saveNutritionLog(date, mealsWithMacros); setMeals(log.meals); } finally { setSaving(false); } };
+  const alternatives = foodMarket.filter((food) => food.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 12);
+  const addFood = (food) => {
+    setMeals((current) => current.map((meal, index) => index === selectedMeal ? { ...meal, foods: [...meal.foods, { name: food.name, grams: 100 }] } : meal));
+    setQuery("");
+  };
   return <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-2xl font-bold">Nhật ký ăn hôm nay</h2><p className="mt-1 text-sm text-zinc-500">Đánh dấu bữa và sửa gram thực tế.</p></div><button onClick={save} disabled={saving} className="rounded-xl bg-white px-5 py-3 font-medium text-black">{saving ? "Đang lưu" : "Lưu nhật ký"}</button></div>
-    <div className="mt-5 grid gap-4 md:grid-cols-2">{meals.map((meal, mealIndex) => <article key={mealIndex} className="rounded-2xl border border-white/10 bg-black/30 p-4"><label className="flex items-center gap-3 font-semibold"><input type="checkbox" checked={meal.completed} onChange={(e) => setMeals((current) => current.map((item,i) => i === mealIndex ? { ...item, completed: e.target.checked } : item))} className="size-5 accent-white" />{meal.name}</label><div className="mt-4 space-y-2">{meal.foods.map((food, foodIndex) => <div key={`${food.name}-${foodIndex}`} className="flex items-center justify-between gap-3 text-sm"><span className="text-zinc-400">{food.name}</span><input type="number" value={food.grams} onChange={(e) => updateFood(mealIndex, foodIndex, e.target.value)} className="w-24 rounded-lg border border-white/10 bg-black p-2 text-right" /></div>)}</div></article>)}</div>
-    <div className="mt-5"><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm thực phẩm thay thế..." className="w-full rounded-xl border border-white/10 bg-black/40 p-3" />{query && <div className="mt-2 flex flex-wrap gap-2">{alternatives.map((name) => <button key={name} type="button" onClick={() => { setMeals((current) => current.map((meal,i) => i === 0 ? { ...meal, foods: [...meal.foods, { name, grams: 100, calories: 0, protein: 0 }] } : meal)); setQuery(""); }} className="rounded-full border border-white/10 px-3 py-2 text-sm">+ {name}</button>)}</div>}</div>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-2xl font-bold">Chỉnh thực đơn hôm nay</h2><p className="mt-1 text-sm text-zinc-500">Thêm, bỏ hoặc đổi gram; tổng dinh dưỡng tự cập nhật.</p></div><button onClick={save} disabled={saving} className="rounded-xl bg-white px-5 py-3 font-medium text-black">{saving ? "Đang lưu" : "Lưu thực đơn"}</button></div>
+
+    <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">{[["Calories", daily.calories, targets.calories, "kcal"],["Protein", daily.protein, targets.protein, "g"],["Carb", daily.carbs, targets.carbs, "g"],["Fat", daily.fat, targets.fat, "g"]].map(([label,value,target,unit]) => <div key={label} className="rounded-2xl border border-white/10 bg-black/30 p-3"><p className="text-xs text-zinc-600">{label}</p><strong className="mt-1 block text-xl">{Math.round(value)}{unit}</strong><p className="text-xs text-zinc-600">Mục tiêu {target}{unit}</p></div>)}<div className="col-span-2 rounded-2xl border border-white/10 bg-black/30 p-3 sm:col-span-1"><p className="text-xs text-zinc-600">Còn lại</p><strong className={daily.calories > targets.calories ? "text-red-400" : "text-emerald-400"}>{Math.round(targets.calories - daily.calories)} kcal</strong></div></div>
+
+    <div className="mt-5 grid gap-4 lg:grid-cols-2">{mealsWithMacros.map((meal, mealIndex) => { const total = sumMacros(meal.foods); return <article key={mealIndex} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+      <div className="flex items-center justify-between gap-3"><label className="flex items-center gap-3 font-semibold"><input type="checkbox" checked={meal.completed} onChange={(e) => setMeals((current) => current.map((item,i) => i === mealIndex ? { ...item, completed: e.target.checked } : item))} className="size-5 accent-white" />{meal.name}</label><span className="text-sm text-zinc-400">{Math.round(total.calories)} kcal · {Math.round(total.protein)}g P</span></div>
+      <div className="mt-4 space-y-2">{meal.foods.map((food, foodIndex) => <div key={`${food.name}-${foodIndex}`} className="grid grid-cols-[1fr_78px_36px] items-center gap-2 rounded-xl border border-white/5 p-2 text-sm"><div><p className="text-zinc-300">{food.name}</p><p className="text-xs text-zinc-600">{Math.round(food.calories)} kcal · P {round(food.protein)} · C {round(food.carbs)} · F {round(food.fat)}</p></div><label className="relative"><input type="number" min="0" value={food.grams} onChange={(e) => updateFood(mealIndex, foodIndex, e.target.value)} className="w-full rounded-lg border border-white/10 bg-black py-2 pl-2 pr-5 text-right" /><span className="absolute right-1 top-2.5 text-xs text-zinc-600">g</span></label><button type="button" onClick={() => removeFood(mealIndex, foodIndex)} aria-label={`Bỏ ${food.name}`} className="grid size-9 place-items-center rounded-lg text-zinc-600 hover:bg-red-500/10 hover:text-red-400"><Trash2 className="size-4" /></button></div>)}</div>
+      <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs text-zinc-500"><span>{Math.round(total.calories)} kcal</span><span>{round(total.protein)}g P</span><span>{round(total.carbs)}g C</span><span>{round(total.fat)}g F</span></div>
+    </article>; })}</div>
+
+    <div className="mt-5 rounded-2xl border border-white/10 p-4"><div className="grid gap-3 sm:grid-cols-[200px_1fr]"><select value={selectedMeal} onChange={(e) => setSelectedMeal(Number(e.target.value))} className="rounded-xl border border-white/10 bg-black/40 p-3">{meals.map((meal,index) => <option key={index} value={index}>Thêm vào {meal.name}</option>)}</select><label className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm từ kho thực phẩm..." className="w-full rounded-xl border border-white/10 bg-black/40 py-3 pl-10 pr-3" /></label></div>{query && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{alternatives.map((food) => <button key={food.name} type="button" onClick={() => addFood(food)} className="flex items-center justify-between rounded-xl border border-white/10 p-3 text-left text-sm hover:bg-white/5"><span>{food.name}<small className="mt-1 block text-zinc-600">{food.calories} kcal · {food.protein}g protein /100g</small></span><Plus className="size-4" /></button>)}</div>}</div>
   </section>;
 }
+
+function enrichFood(food) {
+  const source = findFood(food.name);
+  const ratio = (Number(food.grams) || 0) / 100;
+  return { ...food, grams: Number(food.grams) || 0, calories: source ? source.calories * ratio : Number(food.calories) || 0, protein: source ? source.protein * ratio : Number(food.protein) || 0, carbs: source ? source.carbs * ratio : Number(food.carbs) || 0, fat: source ? source.fat * ratio : Number(food.fat) || 0 };
+}
+
+function findFood(name) {
+  const normalized = String(name).toLowerCase();
+  const aliases = { "cơm": "gạo trắng", "ức gà": "ức gà không da", "bò nạc": "thịt bò nạc", "cá trắng": "cá basa", "trứng": "trứng gà", "rau xanh": "rau bina", "salad": "rau bina", "pasta": "mì pasta", "berries": "dâu tây" };
+  const target = aliases[normalized] || normalized;
+  return foodMarket.find((food) => food.name.toLowerCase() === target || food.name.toLowerCase().includes(target) || target.includes(food.name.toLowerCase()));
+}
+
+function sumMacros(foods) {
+  return foods.reduce((total, food) => ({ calories: total.calories + Number(food.calories || 0), protein: total.protein + Number(food.protein || 0), carbs: total.carbs + Number(food.carbs || 0), fat: total.fat + Number(food.fat || 0) }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+}
+
+function round(value) { return Math.round(Number(value) * 10) / 10; }
