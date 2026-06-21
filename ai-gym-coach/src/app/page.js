@@ -330,7 +330,7 @@ export default function HomePage() {
             </div>
 
             {[
-              ["Khám phá", [["Giới thiệu", "/about"], ["Bài tập", "/exercises"], ["Thuật ngữ", "/glossary"], ["Thực phẩm bổ sung", "/supplements"]]],
+              ["Khám phá", [["Giới thiệu", "/about"], ["Bài tập", "/exercises"], ["Thực phẩm", "/foods"], ["Thuật ngữ", "/glossary"], ["Thực phẩm bổ sung", "/supplements"]]],
               ["Ứng dụng", [["Tổng quan", "/dashboard"], ["Lịch tập", "/workout"], ["Dinh dưỡng", "/nutrition"], ["Tiến độ", "/progress"]]],
               ["Tài khoản", [["Đăng nhập", "/login"], ["Đăng ký", "/register"], ["Quên mật khẩu", "/forgot-password"], ["Cài đặt", "/settings"]]],
             ].map(([heading, links]) => (

@@ -11,6 +11,7 @@ import {
   Info,
   LayoutDashboard,
   MoreHorizontal,
+  ShoppingBasket,
   Pill,
   Settings,
   Sparkles,
@@ -29,6 +30,7 @@ const primaryNavItems = [
   { label: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
   { label: "Tập luyện", href: "/workout", icon: Dumbbell },
   { label: "Dinh dưỡng", href: "/nutrition", icon: Activity },
+  { label: "Thực phẩm", href: "/foods", icon: ShoppingBasket },
   { label: "Tiến độ", href: "/progress", icon: TrendingUp },
   { label: "Bài tập", href: "/exercises", icon: Dumbbell },
   { label: "Thuật ngữ", href: "/glossary", icon: Info },
@@ -110,7 +112,7 @@ function MobileNav() {
     ["/", "/onboarding", "/dashboard", "/workout"].includes(item.href)
   );
   const moreItems = primaryNavItems.filter((item) =>
-    ["/nutrition", "/progress", "/exercises", "/glossary", "/supplements", "/settings"].includes(item.href)
+    ["/nutrition", "/foods", "/progress", "/exercises", "/glossary", "/supplements", "/settings"].includes(item.href)
   );
   const moreActive = moreItems.some((item) => item.href === pathname);
 
