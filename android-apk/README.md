@@ -1,7 +1,7 @@
 # AI Gym Coach APK
 
 Native Android WebView wrapper with the Next.js UI bundled in the APK.
-Package: `vn.aigym.coach`, version 1.0.1, Android 7+ (min SDK 24), target SDK 35.
+Package: `vn.aigym.coach`, version 1.0.2, Android 7+ (min SDK 24), target SDK 35.
 The wrapper uses `https://gym-tau-black.vercel.app` as its local UI origin.
 The Render backend must allow this origin in `CORS_ORIGIN`.
 
@@ -26,7 +26,7 @@ python3 android-apk/prepare-toolchain.py
 python3 android-apk/build-apk.py
 ```
 
-Output: `android-apk/dist/AI-Gym-Coach-1.0.1.apk`.
+Output: `android-apk/dist/AI-Gym-Coach-1.0.2.apk`.
 `JAVA_HOME` may select a JDK. Optional path overrides:
 `GYM_ANDROID_TOOLCHAIN`, `GYM_ANDROID_SIGNING`, `GYM_WEB_EXPORT`.
 
@@ -48,7 +48,6 @@ APK files, build output and downloaded tools are not committed.
 
 The original build passed production compilation, TypeScript, packaged asset
 checks, ZIP integrity, zipalign and APK v2/v3 signature verification.
-The wrapper supports navigation/back, persistent web storage, cookies, image
-selection and external links. Its UI is bundled; API features still need internet.
+The wrapper shows a native branded splash screen while the app starts, then fades to the UI. It also supports navigation/back, persistent web storage, cookies, image selection and external links. Its UI is bundled; API features still need internet.
 The original APK was not launched on a device. Render API requests timed out
 during verification, so login, CORS and data persistence remain unverified.
