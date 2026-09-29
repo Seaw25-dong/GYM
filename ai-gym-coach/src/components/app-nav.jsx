@@ -118,7 +118,7 @@ function MobileNav() {
 
   return (
     <>
-      <div className="sticky top-0 z-40 border-b border-white/10 bg-black/85 px-4 py-3 backdrop-blur-xl lg:hidden">
+      <div className="sticky top-0 z-40 border-b border-white/10 bg-black/85 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] backdrop-blur-xl lg:hidden">
         <div className="flex items-center justify-between">
         <Link href="/" className="font-bold">
           AI Gym Coach
