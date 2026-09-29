@@ -1,0 +1,8 @@
+/build/
+/dist/
+/toolchain/
+/signing/
+__pycache__/
+*.jks
+*.keystore
+password.txt
