@@ -32,7 +32,7 @@ if not password.exists():
 if not keystore.exists():
  run(java/'keytool','-genkeypair','-keystore',keystore,'-storepass:file',password,'-keypass:file',password,'-alias','gym','-keyalg','RSA','-keysize','2048','-validity','10000','-dname','CN=AI Gym Coach, O=Personal, C=VN')
  os.chmod(keystore,0o600)
-apk=root/'dist'/'AI-Gym-Coach-1.0.2.apk'
+apk=root/'dist'/'AI-Gym-Coach-1.0.3.apk'
 run('apksigner','sign','--ks',keystore,'--ks-key-alias','gym','--ks-pass','file:'+str(password),'--out',apk,build/'aligned.apk')
 run('apksigner','verify','--verbose',apk)
 run('zipalign','-c','4',apk)
