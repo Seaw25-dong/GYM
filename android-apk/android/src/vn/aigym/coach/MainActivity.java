@@ -5,26 +5,52 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.os.Bundle;
 import android.webkit.*;
+import android.view.Gravity;
+import android.view.View;
 import android.view.WindowInsets;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import java.io.*;
 import java.util.*;
 
 public final class MainActivity extends Activity {
     private static final String HOST = "gym-tau-black.vercel.app";
     private static final String START = "https://" + HOST + "/";
+    private static final long MIN_SPLASH_DURATION_MS = 900;
+    private static final long SPLASH_TIMEOUT_MS = 8000;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private long splashStartedAt;
+    private FrameLayout root;
+    private View splash;
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
     private boolean errorShown;
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
+        splashStartedAt = SystemClock.elapsedRealtime();
+        root = new FrameLayout(this);
+        root.setBackgroundColor(Color.rgb(9,9,11));
         web = new WebView(this);
         web.setBackgroundColor(Color.rgb(9,9,11));
-        setContentView(web);
+        root.addView(web, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        splash = createSplashScreen();
+        root.addView(splash, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
+        mainHandler.postDelayed(this::hideSplash, SPLASH_TIMEOUT_MS);
         web.setOnApplyWindowInsetsListener((view, insets) -> {
             if (Build.VERSION.SDK_INT >= 30) {
                 android.graphics.Insets edges = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
@@ -62,10 +88,14 @@ public final class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 errorShown = false;
                 CookieManager.getInstance().flush();
+                long elapsed = SystemClock.elapsedRealtime() - splashStartedAt;
+                mainHandler.postDelayed(MainActivity.this::hideSplash,
+                    Math.max(0, MIN_SPLASH_DURATION_MS - elapsed));
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError error) {
                 if (req.isForMainFrame() && !errorShown) {
                     errorShown = true;
+                    hideSplash();
                     new AlertDialog.Builder(MainActivity.this).setTitle("Không tải được trang")
                       .setMessage("Vui lòng thử lại.")
                       .setPositiveButton("Thử lại", (dialog, which) -> web.loadUrl(START))
@@ -90,6 +120,89 @@ public final class MainActivity extends Activity {
             web.loadUrl(isLocal(deepLink) ? deepLink.toString() : START);
         }
     }
+    private View createSplashScreen() {
+        FrameLayout screen = new FrameLayout(this);
+        screen.setBackgroundColor(Color.rgb(9,9,11));
+        screen.setContentDescription("AI Gym Coach đang khởi động");
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setGravity(Gravity.CENTER_HORIZONTAL);
+        content.setPadding(dp(28), dp(24), dp(28), dp(24));
+        FrameLayout.LayoutParams contentParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER);
+        screen.addView(content, contentParams);
+
+        ImageView mark = new ImageView(this);
+        mark.setImageResource(R.drawable.ic_launcher);
+        mark.setContentDescription(null);
+        LinearLayout.LayoutParams markParams = new LinearLayout.LayoutParams(dp(88), dp(88));
+        markParams.bottomMargin = dp(26);
+        content.addView(mark, markParams);
+
+        TextView title = new TextView(this);
+        title.setText("AI GYM COACH");
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(23);
+        title.setLetterSpacing(0.16f);
+        title.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        title.setGravity(Gravity.CENTER);
+        content.addView(title, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText("Huấn luyện cá nhân hóa");
+        subtitle.setTextColor(Color.rgb(161,161,170));
+        subtitle.setTextSize(14);
+        subtitle.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams subtitleParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        subtitleParams.topMargin = dp(9);
+        content.addView(subtitle, subtitleParams);
+
+        ProgressBar progress = new ProgressBar(this);
+        progress.setIndeterminate(true);
+        if (Build.VERSION.SDK_INT >= 21) {
+            progress.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Color.rgb(163,230,53)));
+        }
+        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(dp(24), dp(24));
+        progressParams.topMargin = dp(34);
+        content.addView(progress, progressParams);
+
+        TextView footer = new TextView(this);
+        footer.setText("TẬP LUYỆN  ·  DINH DƯỠNG  ·  TIẾN ĐỘ");
+        footer.setTextColor(Color.rgb(82,82,91));
+        footer.setTextSize(9);
+        footer.setLetterSpacing(0.08f);
+        footer.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams footerParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        footerParams.leftMargin = dp(16);
+        footerParams.rightMargin = dp(16);
+        footerParams.bottomMargin = dp(30);
+        screen.addView(footer, footerParams);
+
+        screen.setAlpha(0f);
+        screen.setTranslationY(dp(8));
+        screen.animate().alpha(1f).translationY(0f).setDuration(320).start();
+        return screen;
+    }
+
+    private void hideSplash() {
+        if (splash == null) return;
+        final View currentSplash = splash;
+        splash = null;
+        currentSplash.animate().alpha(0f).setDuration(260).withEndAction(() -> {
+            if (root != null) root.removeView(currentSplash);
+        }).start();
+    }
+
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
     private static boolean isLocal(Uri uri) {
         return uri != null && "https".equals(uri.getScheme()) && HOST.equals(uri.getHost()) && (uri.getPort() == -1 || uri.getPort() == 443);
     }
@@ -159,5 +272,10 @@ public final class MainActivity extends Activity {
     @Override protected void onPause() { web.onPause(); CookieManager.getInstance().flush(); super.onPause(); }
     @Override protected void onResume() { super.onResume(); if (web != null) web.onResume(); }
     @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
-    @Override protected void onDestroy() { if (fileCallback != null) fileCallback.onReceiveValue(null); web.destroy(); super.onDestroy(); }
+    @Override protected void onDestroy() {
+        mainHandler.removeCallbacksAndMessages(null);
+        if (fileCallback != null) fileCallback.onReceiveValue(null);
+        web.destroy();
+        super.onDestroy();
+    }
 }

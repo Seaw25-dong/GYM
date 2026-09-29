@@ -10,7 +10,7 @@ if not (web/'index.html').is_file():
  raise SystemExit('Build the web export first; see README.md')
 if build.exists():
  shutil.rmtree(build)
-for directory in (build,signing,build/'classes',build/'dex',root/'dist'):
+for directory in (build,signing,build/'classes',build/'dex',build/'generated',root/'dist'):
  directory.mkdir(parents=True,exist_ok=True)
 os.chmod(signing,0o700)
 assets=build/'assets'/'web'
@@ -18,9 +18,9 @@ shutil.copytree(web,assets)
 def run(*args):
  subprocess.run([str(a) for a in args],check=True)
 run('aapt2','compile','--dir',src/'res','-o',build/'resources.zip')
-run('aapt2','link','-o',build/'unsigned.apk','--manifest',src/'AndroidManifest.xml','-I',tools/'android-resources.jar','-A',build/'assets','--min-sdk-version','24','--target-sdk-version','35','--auto-add-overlay',build/'resources.zip')
+run('aapt2','link','-o',build/'unsigned.apk','--manifest',src/'AndroidManifest.xml','-I',tools/'android-resources.jar','-A',build/'assets','--java',build/'generated','--min-sdk-version','24','--target-sdk-version','35','--auto-add-overlay',build/'resources.zip')
 java=Path(os.environ['JAVA_HOME'])/'bin' if os.environ.get('JAVA_HOME') else Path(shutil.which('javac')).resolve().parent
-run(java/'javac','--release','8','-classpath',tools/'android.jar','-d',build/'classes',*src.glob('src/**/*.java'))
+run(java/'javac','--release','8','-classpath',tools/'android.jar','-d',build/'classes',*src.glob('src/**/*.java'),*build.glob('generated/**/*.java'))
 classes=sorted((build/'classes').rglob('*.class'))
 run(java/'java','-cp',tools/'r8.jar','com.android.tools.r8.D8','--min-api','24','--lib',tools/'android.jar','--output',build/'dex',*classes)
 with zipfile.ZipFile(build/'unsigned.apk','a',compression=zipfile.ZIP_DEFLATED) as z:
@@ -32,7 +32,7 @@ if not password.exists():
 if not keystore.exists():
  run(java/'keytool','-genkeypair','-keystore',keystore,'-storepass:file',password,'-keypass:file',password,'-alias','gym','-keyalg','RSA','-keysize','2048','-validity','10000','-dname','CN=AI Gym Coach, O=Personal, C=VN')
  os.chmod(keystore,0o600)
-apk=root/'dist'/'AI-Gym-Coach-1.0.1.apk'
+apk=root/'dist'/'AI-Gym-Coach-1.0.2.apk'
 run('apksigner','sign','--ks',keystore,'--ks-key-alias','gym','--ks-pass','file:'+str(password),'--out',apk,build/'aligned.apk')
 run('apksigner','verify','--verbose',apk)
 run('zipalign','-c','4',apk)
