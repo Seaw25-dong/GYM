@@ -45,12 +45,25 @@ router.post("/register", async (req, res, next) => {
     });
     const verificationUrl = buildVerificationUrl(verificationToken);
 
-    await sendVerificationEmail({ email, verificationUrl });
+    let verificationEmailStatus = process.env.SMTP_HOST ? "sent" : "console";
+    try {
+      await sendVerificationEmail({ email, verificationUrl });
+    } catch (error) {
+      verificationEmailStatus = "failed";
+      console.error("Registration verification email failed", { code: error.code, command: error.command });
+    }
+    const verificationMessage = verificationEmailStatus === "failed"
+      ? "Tài khoản đã được tạo nhưng chưa gửi được email xác thực. Hãy thử gửi lại hoặc liên hệ hỗ trợ."
+      : verificationEmailStatus === "console"
+        ? "Tài khoản đã được tạo. Link xác thực được in trong terminal backend ở chế độ local."
+        : "Tài khoản đã được tạo. Vui lòng kiểm tra email và thư mục spam để xác thực trong 10 phút.";
 
     res.status(201).json({
       success: true,
       message: "Vui lòng kiểm tra email để xác thực tài khoản. Link có hiệu lực trong 10 phút.",
       data: {
+        verificationEmailStatus,
+        message: verificationMessage,
         user: publicUser(user),
       },
     });

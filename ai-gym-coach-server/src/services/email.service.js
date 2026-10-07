@@ -1,12 +1,36 @@
 import nodemailer from "nodemailer";
 
+async function deliverMail(transporter, message) {
+  let timeout;
+  try {
+    return await Promise.race([
+      transporter.sendMail(message),
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => {
+          transporter.close();
+          reject(Object.assign(new Error("Email delivery timed out"), { code: "ETIMEDOUT" }));
+        }, 15000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function sendVerificationEmail({ email, verificationUrl }) {
   if (!process.env.SMTP_HOST) {
+    if (process.env.NODE_ENV === "production") {
+      throw Object.assign(new Error("SMTP_HOST is not configured"), { code: "EMAIL_NOT_CONFIGURED" });
+    }
     console.log(`Email verification link for ${email}: ${verificationUrl}`);
     return;
   }
 
   const transporter = nodemailer.createTransport({
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    dnsTimeout: 10000,
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
     secure: process.env.SMTP_SECURE === "true",
@@ -24,7 +48,7 @@ async function sendVerificationEmail({ email, verificationUrl }) {
         ? `AI Gym Coach <${process.env.SMTP_USER}>`
         : "AI Gym Coach <no-reply@ai-gym-coach.local>";
 
-  await transporter.sendMail({
+  await deliverMail(transporter, {
     from,
     to: email,
     subject: "Xác thực tài khoản AI Gym Coach",
@@ -53,13 +77,17 @@ async function sendActionEmail({ email, subject, text, html }) {
     return;
   }
   const transporter = nodemailer.createTransport({
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    dnsTimeout: 10000,
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
     secure: process.env.SMTP_SECURE === "true",
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
   const from = process.env.MAIL_FROM?.trim() || `AI Gym Coach <${process.env.SMTP_USER}>`;
-  await transporter.sendMail({ from, to: email, subject, text, html });
+  await deliverMail(transporter, { from, to: email, subject, text, html });
 }
 
 export { sendPasswordResetEmail, sendVerificationEmail };

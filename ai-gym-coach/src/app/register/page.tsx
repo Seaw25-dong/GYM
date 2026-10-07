@@ -7,7 +7,7 @@ import { useState } from "react";
 import { ToastMessage } from "@/components/toast-message";
 import { PasswordInput } from "@/components/password-input";
 import { AuthPageShell } from "@/components/auth-page-shell";
-import { registerUser } from "@/lib/api";
+import { registerUser, resendVerification } from "@/lib/api";
 
 const emailRegex = /^\S+@\S+\.\S+$/;
 
@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [toast, setToast] = useState("");
   const [toastType, setToastType] = useState("info");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registration, setRegistration] = useState(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -47,6 +48,7 @@ export default function RegisterPage() {
 
     try {
       const data = await registerUser({ email, username: username.trim(), password });
+      setRegistration({ message: data.message, email: email.trim() });
       showToast(data.message || "Vui lòng kiểm tra email để xác thực tài khoản.");
       setPassword("");
       setConfirmPassword("");
@@ -69,7 +71,23 @@ export default function RegisterPage() {
       description="Tạo tài khoản để lưu chỉ số, nhận lịch tập và dinh dưỡng được cá nhân hóa theo mục tiêu."
     >
       <ToastMessage message={toast} type={toastType} />
-      <form
+      {registration ? (
+        <section className="relative z-30 my-auto w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950/80 p-8" aria-live="polite">
+          <h1 className="text-3xl font-bold">Xác thực tài khoản</h1>
+          <p className="mt-4 text-zinc-300">{registration.message || "Tài khoản đã được tạo. Vui lòng kiểm tra email để xác thực."}</p>
+          <p className="mt-3 break-all text-zinc-400">{registration.email}</p>
+          <button type="button" disabled={isSubmitting} className="mt-6 w-full rounded-2xl bg-white px-6 py-4 font-medium text-black disabled:opacity-50" onClick={async () => {
+            setIsSubmitting(true);
+            try {
+              const result = await resendVerification(registration.email);
+              showToast(result.message || "Vui lòng kiểm tra email và thư mục spam.");
+            } catch {
+              showToast("Chưa gửi được email xác thực. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.", "error");
+            } finally { setIsSubmitting(false); }
+          }}>{isSubmitting ? "Đang gửi..." : "Gửi lại email xác thực"}</button>
+          <Link href="/login" className="mt-5 block text-center text-white hover:underline">Đi tới đăng nhập</Link>
+        </section>
+      ) : <form
         onSubmit={handleSubmit}
         className="relative z-30 my-auto w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950/80 p-5 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-8"
       >
@@ -141,7 +159,7 @@ export default function RegisterPage() {
             Đăng nhập
           </Link>
         </p>
-      </form>
+      </form>}
     </AuthPageShell>
   );
 }
