@@ -1,6 +1,5 @@
 import { createHttpError } from "../utils/httpError.js";
 
-const defaultModel = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
 const aiPlanSchema = {
   type: "object",
@@ -128,7 +127,7 @@ async function generateAiPlan({ profile, calculatedPlan, history = null, adjustm
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: defaultModel,
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
       input: [
         {
           role: "system",
