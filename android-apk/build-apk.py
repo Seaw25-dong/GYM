@@ -6,6 +6,8 @@ src=root/'android'; build=root/'build'
 tools=Path(os.environ.get('GYM_ANDROID_TOOLCHAIN', str(root/'toolchain')))
 signing=Path(os.environ.get('GYM_ANDROID_SIGNING', str(root/'signing')))
 web=Path(os.environ.get('GYM_WEB_EXPORT', str(root.parent/'ai-gym-coach'/'out')))
+if not (signing/'gym-release.jks').is_file() or not (signing/'password.txt').is_file():
+ raise SystemExit('This update requires the original gym-release.jks and password.txt. Set GYM_ANDROID_SIGNING to their directory; do not generate a new signing key.')
 if not (web/'index.html').is_file():
  raise SystemExit('Build the web export first; see README.md')
 if build.exists():
@@ -32,7 +34,7 @@ if not password.exists():
 if not keystore.exists():
  run(java/'keytool','-genkeypair','-keystore',keystore,'-storepass:file',password,'-keypass:file',password,'-alias','gym','-keyalg','RSA','-keysize','2048','-validity','10000','-dname','CN=AI Gym Coach, O=Personal, C=VN')
  os.chmod(keystore,0o600)
-apk=root/'dist'/'AI-Gym-Coach-1.0.2.apk'
+apk=root/'dist'/'AI-Gym-Coach-1.0.3.apk'
 run('apksigner','sign','--ks',keystore,'--ks-key-alias','gym','--ks-pass','file:'+str(password),'--out',apk,build/'aligned.apk')
 run('apksigner','verify','--verbose',apk)
 run('zipalign','-c','4',apk)

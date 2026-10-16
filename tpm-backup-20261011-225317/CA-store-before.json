@@ -1,0 +1,32 @@
+﻿[
+    {
+        "Subject":  "CN=Root Agency",
+        "Issuer":  "CN=Root Agency",
+        "Thumbprint":  "FEE449EE0E3965A5246F000E87FDE2A065FD89D4"
+    },
+    {
+        "Subject":  "CN=INTC-KEYID-34219B21F477F6C7F78A0F26B23D0430DEEA4363-V2",
+        "Issuer":  "CN=Microsoft TPM Root Certificate Authority 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "Thumbprint":  "E3AB2DA913A608458B6279258B4F0A1828D38A2E"
+    },
+    {
+        "Subject":  "OU=www.verisign.com/CPS Incorp.by Ref. LIABILITY LTD.(c)97 VeriSign, OU=VeriSign International Server CA - Class 3, OU=\"VeriSign, Inc.\", O=VeriSign Trust Network",
+        "Issuer":  "OU=Class 3 Public Primary Certification Authority, O=\"VeriSign, Inc.\", C=US",
+        "Thumbprint":  "D559A586669B08F46A30A133F8A9ED3D038E2EA8"
+    },
+    {
+        "Subject":  "CN=Microsoft TPM Root Certificate Authority 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "Issuer":  "CN=Microsoft TPM Root Certificate Authority 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "Thumbprint":  "D4FFDB19BA590FFFAA34DB5F4B568706A2978436"
+    },
+    {
+        "Subject":  "CN=INTC-KEYID-34219B21F477F6C7F78A0F26B23D0430DEEA4363",
+        "Issuer":  "CN=Microsoft TPM Root Certificate Authority 2014, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "Thumbprint":  "5E45CDBAE06E5224F2D7DE61C52E4614EE550AA6"
+    },
+    {
+        "Subject":  "CN=Microsoft Windows Hardware Compatibility, OU=Microsoft Corporation, OU=Microsoft Windows Hardware Compatibility Intermediate CA, OU=Copyright (c) 1997 Microsoft Corp.",
+        "Issuer":  "CN=Microsoft Root Authority, OU=Microsoft Corporation, OU=Copyright (c) 1997 Microsoft Corp.",
+        "Thumbprint":  "109F1CAED645BB78B3EA2B94C0697C740733031C"
+    }
+]

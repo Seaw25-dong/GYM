@@ -1,6 +1,8 @@
 /build/
 /dist/
 /toolchain/
+/platform-tools/
+/platform-tools-latest-windows.zip
 /signing/
 __pycache__/
 *.jks

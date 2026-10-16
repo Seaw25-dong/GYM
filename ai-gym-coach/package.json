@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "build:android": "GYM_ANDROID_EXPORT=1 next build --webpack"
+    "build:android": "node scripts/build-android.cjs"
   },
   "dependencies": {
     "@splinetool/react-spline": "^4.1.0",
