@@ -126,13 +126,13 @@ export default function HomePage() {
             <Link href="/about" className="text-sm text-zinc-400 hover:text-white md:hidden">Giới thiệu</Link>
             <Link
               href="/login"
-              className="hidden rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium transition hover:bg-white/10 sm:inline-flex"
+              className="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium transition hover:bg-white/10"
             >
               Đăng nhập
             </Link>
             <Link
               href="/register"
-              className="rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition hover:scale-105"
+              className="hidden rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition hover:scale-105 md:inline-flex"
             >
               Đăng ký
             </Link>
